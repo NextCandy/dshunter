@@ -11,7 +11,7 @@ import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider, themeInitScript } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 
 function NotFoundComponent() {
   return (
@@ -111,7 +111,6 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="zh" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <HeadContent />
       </head>
       <body>
