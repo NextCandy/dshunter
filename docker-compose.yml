@@ -9,6 +9,7 @@ services:
     environment:
       # ===== 必填 =====
       SESSION_SECRET: ${SESSION_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       SITE_PASSWORD: ${SITE_PASSWORD}
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}
 
