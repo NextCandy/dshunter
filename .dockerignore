@@ -13,5 +13,4 @@ dist
 .env
 .env.*
 !.env.example
-.lovable
 coverage

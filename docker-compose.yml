@@ -12,6 +12,9 @@ services:
       SITE_PASSWORD: ${SITE_PASSWORD}
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
 
+      # ===== NAS 部署 =====
+      TZ: ${TZ:-Asia/Shanghai}
+
       # ===== 注册商（按需配置）=====
       SPACESHIP_API_KEY: ${SPACESHIP_API_KEY:-}
       SPACESHIP_API_SECRET: ${SPACESHIP_API_SECRET:-}
@@ -26,3 +29,15 @@ services:
       TENCENT_SECRET_KEY: ${TENCENT_SECRET_KEY:-}
       WEST_USERNAME: ${WEST_USERNAME:-}
       WEST_API_PASSWORD: ${WEST_API_PASSWORD:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    # 日志轮转，避免 NAS 磁盘被日志写满
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
