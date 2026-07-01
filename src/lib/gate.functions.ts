@@ -14,10 +14,15 @@ export const checkGate = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const unlockSite = createServerFn({ method: "POST" })
-  .inputValidator((d: { password: string }) => d)
+  .inputValidator((d: { email?: string; password: string }) => d)
   .handler(async ({ data }) => {
     const expected = process.env.SITE_PASSWORD;
     if (!expected) throw new Error("SITE_PASSWORD not set");
+    const expectedEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    if (expectedEmail) {
+      const email = data.email?.trim().toLowerCase() ?? "";
+      if (!eq(email, expectedEmail)) return { ok: false as const };
+    }
     if (!eq(data.password, expected)) return { ok: false as const };
     const { getGateSession } = await import("./session.server");
     const s = await getGateSession();
