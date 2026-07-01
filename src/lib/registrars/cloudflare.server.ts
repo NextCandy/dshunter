@@ -1,4 +1,6 @@
 // Cloudflare API helpers (server-only)
+import { getSecret } from "../secrets.server";
+
 const CF_BASE = "https://api.cloudflare.com/client/v4";
 
 export type CFResp<T = any> = {
@@ -9,8 +11,8 @@ export type CFResp<T = any> = {
   result_info?: any;
 };
 
-export function cfToken(): string {
-  const t = process.env.CLOUDFLARE_API_TOKEN;
+export async function cfToken(): Promise<string> {
+  const t = await getSecret("CLOUDFLARE_API_TOKEN");
   if (!t) throw new Error("CLOUDFLARE_API_TOKEN 未配置");
   return t;
 }
@@ -19,7 +21,7 @@ export async function cf<T = any>(
   path: string,
   init: RequestInit = {},
 ): Promise<CFResp<T>> {
-  const token = cfToken();
+  const token = await cfToken();
   const res = await fetch(`${CF_BASE}${path}`, {
     ...init,
     headers: {

@@ -3,29 +3,32 @@ import { useSyncExternalStore } from "react";
 // Simple cross-page store for the working domain set. Client-only.
 const KEY = "domainops.selected";
 
-type Store = { domains: string[] };
-
-function read(): Store {
-  if (typeof window === "undefined") return { domains: [] };
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? JSON.parse(raw) : { domains: [] };
-  } catch {
-    return { domains: [] };
-  }
-}
-
 const listeners = new Set<() => void>();
+const EMPTY: string[] = [];
 
-function write(next: Store) {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(KEY, JSON.stringify(next));
+// 缓存快照：只有当 localStorage 原始字符串变化时才返回新数组引用，否则返回同一引用。
+// 否则 useSyncExternalStore 每次渲染都拿到新数组 → 判定 store 变化 → 无限重渲染（React #185）。
+let cachedRaw: string | null = null;
+let cachedDomains: string[] = EMPTY;
+
+function getSnapshot(): string[] {
+  if (typeof window === "undefined") return EMPTY;
+  const raw = localStorage.getItem(KEY);
+  if (raw === cachedRaw) return cachedDomains;
+  cachedRaw = raw;
+  try {
+    cachedDomains = raw ? (JSON.parse(raw).domains ?? EMPTY) : EMPTY;
+  } catch {
+    cachedDomains = EMPTY;
   }
-  listeners.forEach((l) => l());
+  return cachedDomains;
 }
 
 export function setDomains(domains: string[]) {
-  write({ domains });
+  if (typeof window !== "undefined") {
+    localStorage.setItem(KEY, JSON.stringify({ domains }));
+  }
+  listeners.forEach((l) => l());
 }
 
 export function useDomains(): string[] {
@@ -34,7 +37,7 @@ export function useDomains(): string[] {
       listeners.add(cb);
       return () => listeners.delete(cb);
     },
-    () => read().domains,
-    () => [],
+    getSnapshot,
+    () => EMPTY,
   );
 }

@@ -5,15 +5,17 @@ services:
     container_name: domainops
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${HOST_PORT:-3000}:3000"
     environment:
       # ===== 必填 =====
       SESSION_SECRET: ${SESSION_SECRET}
       SITE_PASSWORD: ${SITE_PASSWORD}
-      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}
 
       # ===== NAS 部署 =====
       TZ: ${TZ:-Asia/Shanghai}
+      # 内网 http 访问设为 false，否则解锁后 Cookie 不下发会被踢回登录页；对外 HTTPS 保持 true
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
 
       # ===== 注册商（按需配置）=====
       SPACESHIP_API_KEY: ${SPACESHIP_API_KEY:-}
@@ -36,6 +38,9 @@ services:
       start_period: 10s
       retries: 3
     # 日志轮转，避免 NAS 磁盘被日志写满
+    volumes:
+      # 持久化 UI 保存的加密凭证（data/secrets.json）
+      - ./data:/app/data
     logging:
       driver: "json-file"
       options:

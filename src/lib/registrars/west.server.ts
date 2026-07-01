@@ -1,12 +1,13 @@
 // 西部数码 West.cn API — https://www.west.cn/CustomerCenter/doc/apiv2.html
 // Uses username + API password. Very simple query-string protocol.
 import { createHash } from "node:crypto";
+import { getSecret } from "../secrets.server";
 
 const BASE = "https://api.west.cn/api/v2";
 
-function creds() {
-  const username = process.env.WEST_USERNAME;
-  const password = process.env.WEST_API_PASSWORD;
+async function creds() {
+  const username = await getSecret("WEST_USERNAME");
+  const password = await getSecret("WEST_API_PASSWORD");
   if (!username || !password) throw new Error("WEST_USERNAME / WEST_API_PASSWORD 未配置");
   return { username, password };
 }
@@ -16,7 +17,7 @@ function md5(s: string) {
 }
 
 async function westCall(path: string, params: Record<string, string> = {}) {
-  const { username, password } = creds();
+  const { username, password } = await creds();
   const time = Math.floor(Date.now() / 1000).toString();
   const token = md5(username + md5(password) + time);
   const body = new URLSearchParams({ username, time, token, ...params });

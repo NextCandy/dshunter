@@ -166,6 +166,8 @@ domainops.example.com {
 | `SITE_PASSWORD` | ✅ | `/unlock` 使用的共享密码 |
 | `CLOUDFLARE_API_TOKEN` | ✅ | `Zone:Read/Edit`, `DNS:Edit`（可选 `Account:Read`） |
 | `TZ` | 可选 | 容器时区，默认 `Asia/Shanghai` |
+| `COOKIE_SECURE` | 可选 | 默认 `true`（仅 HTTPS 下发会话 Cookie）。**内网 http 访问需设为 `false`**，否则解锁后会被踢回登录页 |
+| `HOST_PORT` | 可选 | docker compose 宿主机映射端口，默认 `3000` |
 | `SPACESHIP_API_KEY` / `SPACESHIP_API_SECRET` | 可选 | Spaceship API Manager |
 | `DYNADOT_API_KEY` | 可选 | Dynadot API v3 |
 | `NAMECHEAP_API_USER` / `_API_KEY` / `_USERNAME` / `_CLIENT_IP` | 可选 | Namecheap，需在其后台把 `CLIENT_IP` 加白名单 |
@@ -173,7 +175,7 @@ domainops.example.com {
 | `TENCENT_SECRET_ID` / `_KEY` | 可选 | 授 `QcloudDomainFullAccess` |
 | `WEST_USERNAME` / `WEST_API_PASSWORD` | 可选 | 西部数码后台 → API 接口 |
 
-未配置的注册商在 `/settings` 会显示「未配置」，`/domains` 对应按钮置灰。
+以上注册商 / Cloudflare 凭证**既可用环境变量预置，也可登录后在「设置」页 UI 直接填写保存**——凭证经 AES-256-GCM 加密持久化到挂载卷 `data/secrets.json`，明文不回传浏览器，保存即生效、无需重启。未配置的注册商在 `/settings` 显示「未配置」、`/domains` 对应按钮置灰。
 
 ---
 

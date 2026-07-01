@@ -5,7 +5,7 @@ import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 
-// Standard TanStack Start + Vite setup (lovable wrapper removed).
+// Standard TanStack Start + Vite setup.
 //   - tanstackStart: file-based routing, SSR
 //   - nitro:         server build → .output/ (preset via NITRO_PRESET env,
 //                    Dockerfile sets node-server for NAS / Docker)

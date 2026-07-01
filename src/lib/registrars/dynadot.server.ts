@@ -1,14 +1,16 @@
 // Dynadot JSON API v3 — https://api.dynadot.com/api3.json
+import { getSecret } from "../secrets.server";
+
 const BASE = "https://api.dynadot.com/api3.json";
 
-function key(): string {
-  const k = process.env.DYNADOT_API_KEY;
+async function key(): Promise<string> {
+  const k = await getSecret("DYNADOT_API_KEY");
   if (!k) throw new Error("DYNADOT_API_KEY 未配置");
   return k;
 }
 
 export async function dynadotListDomains(): Promise<string[]> {
-  const url = `${BASE}?key=${encodeURIComponent(key())}&command=list_domain`;
+  const url = `${BASE}?key=${encodeURIComponent(await key())}&command=list_domain`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Dynadot ${res.status}`);
   const j: any = await res.json();
@@ -27,7 +29,7 @@ export async function dynadotListDomains(): Promise<string[]> {
 
 export async function dynadotSetNS(domain: string, ns: string[]): Promise<void> {
   const params = new URLSearchParams({
-    key: key(),
+    key: await key(),
     command: "set_ns",
     domain,
   });

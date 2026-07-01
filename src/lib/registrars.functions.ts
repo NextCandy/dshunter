@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireGate } from "./auth-middleware";
 import { normalizeDomain } from "./domain-utils";
+import { getSecretPresence } from "./secrets.server";
 
 export type Registrar =
   | "spaceship"
@@ -14,18 +15,15 @@ export type Registrar =
 export const getTokenStatus = createServerFn({ method: "GET" })
   .middleware([requireGate])
   .handler(async () => {
+    const p = await getSecretPresence();
     return {
-      cloudflare: Boolean(process.env.CLOUDFLARE_API_TOKEN),
-      spaceship: Boolean(process.env.SPACESHIP_API_KEY && process.env.SPACESHIP_API_SECRET),
-      dynadot: Boolean(process.env.DYNADOT_API_KEY),
-      namecheap: Boolean(
-        process.env.NAMECHEAP_API_USER &&
-          process.env.NAMECHEAP_API_KEY &&
-          process.env.NAMECHEAP_CLIENT_IP,
-      ),
-      aliyun: Boolean(process.env.ALIYUN_ACCESS_KEY_ID && process.env.ALIYUN_ACCESS_KEY_SECRET),
-      tencent: Boolean(process.env.TENCENT_SECRET_ID && process.env.TENCENT_SECRET_KEY),
-      west: Boolean(process.env.WEST_USERNAME && process.env.WEST_API_PASSWORD),
+      cloudflare: p.CLOUDFLARE_API_TOKEN,
+      spaceship: p.SPACESHIP_API_KEY && p.SPACESHIP_API_SECRET,
+      dynadot: p.DYNADOT_API_KEY,
+      namecheap: p.NAMECHEAP_API_USER && p.NAMECHEAP_API_KEY && p.NAMECHEAP_CLIENT_IP,
+      aliyun: p.ALIYUN_ACCESS_KEY_ID && p.ALIYUN_ACCESS_KEY_SECRET,
+      tencent: p.TENCENT_SECRET_ID && p.TENCENT_SECRET_KEY,
+      west: p.WEST_USERNAME && p.WEST_API_PASSWORD,
     };
   });
 

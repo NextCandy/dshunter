@@ -34,3 +34,6 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# 运行时持久化数据（加密凭证 data/secrets.json 等）
+data/

@@ -1,19 +1,21 @@
 // Namecheap API — https://www.namecheap.com/support/api/
 // XML response endpoint. Requires whitelisted client IP in Namecheap dashboard.
+import { getSecret } from "../secrets.server";
+
 const BASE = "https://api.namecheap.com/xml.response";
 
-function creds() {
-  const ApiUser = process.env.NAMECHEAP_API_USER;
-  const ApiKey = process.env.NAMECHEAP_API_KEY;
-  const UserName = process.env.NAMECHEAP_USERNAME || ApiUser;
-  const ClientIp = process.env.NAMECHEAP_CLIENT_IP;
+async function creds() {
+  const ApiUser = await getSecret("NAMECHEAP_API_USER");
+  const ApiKey = await getSecret("NAMECHEAP_API_KEY");
+  const UserName = (await getSecret("NAMECHEAP_USERNAME")) || ApiUser;
+  const ClientIp = await getSecret("NAMECHEAP_CLIENT_IP");
   if (!ApiUser || !ApiKey || !ClientIp)
     throw new Error("NAMECHEAP_API_USER / NAMECHEAP_API_KEY / NAMECHEAP_CLIENT_IP 未配置");
   return { ApiUser, ApiKey, UserName: UserName!, ClientIp };
 }
 
 async function call(command: string, extra: Record<string, string> = {}) {
-  const c = creds();
+  const c = await creds();
   const p = new URLSearchParams({
     ApiUser: c.ApiUser,
     ApiKey: c.ApiKey,

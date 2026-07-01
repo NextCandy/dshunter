@@ -5,7 +5,7 @@ FROM oven/bun:1.1 AS builder
 WORKDIR /app
 
 # 安装依赖（利用缓存层）
-COPY package.json bun.lockb* bunfig.toml* ./
+COPY package.json bun.lock* bun.lockb* bunfig.toml* ./
 RUN bun install --frozen-lockfile || bun install
 
 # 拷贝源代码
@@ -31,6 +31,11 @@ RUN apk add --no-cache tzdata && \
 
 # 只拷贝构建产物，并以非 root 用户运行
 COPY --from=builder --chown=node:node /app/.output ./.output
+
+# 持久化目录：UI 在「设置」保存的加密凭证文件（data/secrets.json）存放于此，
+# 通过卷挂载持久化，容器重建不丢失。
+RUN mkdir -p /app/data && chown -R node:node /app/data
+VOLUME ["/app/data"]
 
 USER node
 

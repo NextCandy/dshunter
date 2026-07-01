@@ -1,13 +1,14 @@
 // Aliyun (Alibaba Cloud) Domain API — ACS3-HMAC-SHA256 signature
 // Docs: https://help.aliyun.com/document_detail/2361052.html
 import { createHash, createHmac, randomBytes } from "node:crypto";
+import { getSecret } from "../secrets.server";
 
 const ENDPOINT = "domain.aliyuncs.com";
 const VERSION = "2018-01-29";
 
-function creds() {
-  const id = process.env.ALIYUN_ACCESS_KEY_ID;
-  const secret = process.env.ALIYUN_ACCESS_KEY_SECRET;
+async function creds() {
+  const id = await getSecret("ALIYUN_ACCESS_KEY_ID");
+  const secret = await getSecret("ALIYUN_ACCESS_KEY_SECRET");
   if (!id || !secret) throw new Error("ALIYUN_ACCESS_KEY_ID / ALIYUN_ACCESS_KEY_SECRET 未配置");
   return { id, secret };
 }
@@ -21,7 +22,7 @@ function sha256Hex(s: string | Buffer) {
 }
 
 async function acsCall(action: string, params: Record<string, string>): Promise<any> {
-  const { id, secret } = creds();
+  const { id, secret } = await creds();
   const now = new Date();
   const iso = now.toISOString().replace(/\.\d{3}Z$/, "Z");
   const nonce = randomBytes(16).toString("hex");

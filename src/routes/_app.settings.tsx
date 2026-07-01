@@ -1,32 +1,108 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getTokenStatus } from "@/lib/registrars.functions";
+import { useState } from "react";
+import { getSecretsStatus, saveSecrets } from "@/lib/secrets.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, ExternalLink, FileText } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "设置 · DomainOps" }] }),
   component: SettingsPage,
 });
 
+type Field = { key: string; label: string; secret?: boolean; optional?: boolean };
+type RegistrarDef = {
+  id: string;
+  name: string;
+  hint: string;
+  link: string;
+  fields: Field[];
+};
+
+// 每个注册商 / Cloudflare 所需的凭证字段。字段名与后端 SECRET_KEYS 一一对应。
+const REGISTRARS: RegistrarDef[] = [
+  {
+    id: "cloudflare",
+    name: "Cloudflare",
+    hint: "需权限：Zone:Read/Edit、DNS:Edit（可选 Account:Read 用于列出账户）。Cloudflare Registrar 域名共用同一 Token。",
+    link: "https://dash.cloudflare.com/profile/api-tokens",
+    fields: [{ key: "CLOUDFLARE_API_TOKEN", label: "API Token", secret: true }],
+  },
+  {
+    id: "spaceship",
+    name: "Spaceship",
+    hint: "Spaceship 后台 → API Manager → 生成 API Key 与 Secret。",
+    link: "https://www.spaceship.com/application/api-manager/",
+    fields: [
+      { key: "SPACESHIP_API_KEY", label: "API Key" },
+      { key: "SPACESHIP_API_SECRET", label: "API Secret", secret: true },
+    ],
+  },
+  {
+    id: "dynadot",
+    name: "Dynadot",
+    hint: "Dynadot 后台 → Tools → API → 启用 API v3。",
+    link: "https://www.dynadot.com/account/domain/setting/api.html",
+    fields: [{ key: "DYNADOT_API_KEY", label: "API Key", secret: true }],
+  },
+  {
+    id: "namecheap",
+    name: "Namecheap",
+    hint: "需把服务器出口 IP 加入 Namecheap 白名单；Client IP 必须与实际出口 IP 一致。",
+    link: "https://ap.www.namecheap.com/settings/tools/apiaccess/",
+    fields: [
+      { key: "NAMECHEAP_API_USER", label: "API User" },
+      { key: "NAMECHEAP_API_KEY", label: "API Key", secret: true },
+      { key: "NAMECHEAP_USERNAME", label: "Username（留空=同 API User）", optional: true },
+      { key: "NAMECHEAP_CLIENT_IP", label: "Client IP" },
+    ],
+  },
+  {
+    id: "aliyun",
+    name: "阿里云（万网）",
+    hint: "建议单独 RAM 用户 AccessKey，最少授予 AliyunDomainFullAccess。",
+    link: "https://ram.console.aliyun.com/manage/ak",
+    fields: [
+      { key: "ALIYUN_ACCESS_KEY_ID", label: "AccessKey ID" },
+      { key: "ALIYUN_ACCESS_KEY_SECRET", label: "AccessKey Secret", secret: true },
+    ],
+  },
+  {
+    id: "tencent",
+    name: "腾讯云（域名）",
+    hint: "子账号密钥，授予 QcloudDomainFullAccess。",
+    link: "https://console.cloud.tencent.com/cam/capi",
+    fields: [
+      { key: "TENCENT_SECRET_ID", label: "SecretId" },
+      { key: "TENCENT_SECRET_KEY", label: "SecretKey", secret: true },
+    ],
+  },
+  {
+    id: "west",
+    name: "西部数码 West.cn",
+    hint: "后台 → 账户设置 → API 接口，启用并设置 API 密码（不同于登录密码）。",
+    link: "https://www.west.cn/manager/API/",
+    fields: [
+      { key: "WEST_USERNAME", label: "用户名" },
+      { key: "WEST_API_PASSWORD", label: "API 密码", secret: true },
+    ],
+  },
+];
+
 function SettingsPage() {
-  const fn = useServerFn(getTokenStatus);
-  const q = useQuery({ queryKey: ["tokens"], queryFn: () => fn() });
+  const statusFn = useServerFn(getSecretsStatus);
+  const q = useQuery({ queryKey: ["secrets"], queryFn: () => statusFn() });
+  const presence = q.data?.presence ?? {};
+
   return (
     <div className="max-w-3xl">
       <h1 className="text-2xl font-bold mb-1">设置</h1>
-      <p className="text-sm text-muted-foreground mb-6">
-        管理外观、Token 状态，以及查看 Vercel 部署指南。
-      </p>
+      <p className="text-sm text-muted-foreground mb-6">管理外观，以及各注册商 / Cloudflare 的 API 凭证。</p>
 
       <Card className="p-4 mb-6">
         <div className="font-semibold mb-2">主题</div>
@@ -34,152 +110,89 @@ function SettingsPage() {
         <ThemeToggle />
       </Card>
 
-      <h2 className="text-lg font-semibold mb-2">Token 状态</h2>
+      <h2 className="text-lg font-semibold mb-2">API 凭证</h2>
       <p className="text-sm text-muted-foreground mb-4">
-        所有 Token 只保存在服务端（加密的项目环境变量），永远不会发送到浏览器。修改请在 Lovable
-        → Cloud → Secrets（或 Vercel 项目环境变量）。
+        在此填写并保存各服务的 API 凭证。凭证会<strong>加密保存在服务端</strong>（也可用环境变量预置），
+        页面只显示「已配置 / 未配置」，明文永远不会回传浏览器。填写后点「保存」即刻生效，无需重启。
       </p>
 
       <div className="space-y-3">
-        <TokenRow
-          name="Cloudflare"
-          ok={q.data?.cloudflare}
-          env="CLOUDFLARE_API_TOKEN"
-          hint="需权限：Zone:Read/Edit, DNS:Edit（可选 Account:Read 用于列出账户）。"
-          link="https://dash.cloudflare.com/profile/api-tokens"
-        />
-        <TokenRow
-          name="Spaceship"
-          ok={q.data?.spaceship}
-          env="SPACESHIP_API_KEY + SPACESHIP_API_SECRET"
-          hint="Spaceship 后台 → API → 生成 Key 与 Secret。"
-          link="https://www.spaceship.com/application/api-manager/"
-        />
-        <TokenRow
-          name="Dynadot"
-          ok={q.data?.dynadot}
-          env="DYNADOT_API_KEY"
-          hint="Dynadot 后台 → Tools → API → 启用 API v3。"
-          link="https://www.dynadot.com/account/domain/setting/api.html"
-        />
-        <TokenRow
-          name="Namecheap"
-          ok={q.data?.namecheap}
-          env="NAMECHEAP_API_USER + NAMECHEAP_API_KEY + NAMECHEAP_USERNAME + NAMECHEAP_CLIENT_IP"
-          hint="需要把服务器出口 IP 加入 Namecheap 白名单；ClientIp 必须与实际出口 IP 一致。"
-          link="https://ap.www.namecheap.com/settings/tools/apiaccess/"
-        />
-        <TokenRow
-          name="阿里云（万网）"
-          ok={q.data?.aliyun}
-          env="ALIYUN_ACCESS_KEY_ID + ALIYUN_ACCESS_KEY_SECRET"
-          hint="RAM 用户 AccessKey，最少授予 AliyunDomainFullAccess。"
-          link="https://ram.console.aliyun.com/manage/ak"
-        />
-        <TokenRow
-          name="腾讯云（DNSPod / 域名）"
-          ok={q.data?.tencent}
-          env="TENCENT_SECRET_ID + TENCENT_SECRET_KEY"
-          hint="子账号密钥，授予 QcloudDomainFullAccess。"
-          link="https://console.cloud.tencent.com/cam/capi"
-        />
-        <TokenRow
-          name="西部数码 West.cn"
-          ok={q.data?.west}
-          env="WEST_USERNAME + WEST_API_PASSWORD"
-          hint="后台 → 账户设置 → API 接口，启用并设置 API 密码（不同于登录密码）。"
-          link="https://www.west.cn/manager/API/"
-        />
+        {REGISTRARS.map((reg) => (
+          <RegistrarCard
+            key={reg.id}
+            reg={reg}
+            presence={presence as Record<string, boolean>}
+            onSaved={() => q.refetch()}
+          />
+        ))}
       </div>
-
-      <Card className="mt-8 p-4 text-sm text-muted-foreground">
-        提示：Cloudflare Registrar（在 CF 上注册的域名）与 Cloudflare Zone 使用同一个 API Token，
-        无需额外配置。
-      </Card>
 
       <div className="mt-6 mb-8">
         <Button variant="outline" onClick={() => q.refetch()}>
           刷新状态
         </Button>
       </div>
-
-      <Accordion type="single" collapsible className="mt-6">
-        <AccordionItem value="deploy">
-          <AccordionTrigger>
-            <span className="flex items-center gap-2">
-              <FileText className="size-4" /> 部署到 Vercel（含环境变量与数据库说明）
-            </span>
-          </AccordionTrigger>
-          <AccordionContent>
-            <DeployGuide />
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
     </div>
   );
 }
 
-function DeployGuide() {
-  return (
-    <div className="prose prose-sm dark:prose-invert max-w-none text-sm space-y-3">
-      <ol className="list-decimal ml-5 space-y-2">
-        <li>把代码推到 GitHub 仓库。</li>
-        <li>
-          Vercel <em>New Project → Import</em>，Framework 选 <strong>Other</strong>。
-        </li>
-        <li>
-          Build：<code>bun run build</code>，Output：<code>.output/public</code>，Node 20+。
-        </li>
-        <li>
-          Project Settings → Environment Variables 逐个添加：
-          <ul className="list-disc ml-5 mt-1">
-            <li><code>SESSION_SECRET</code>（<code>openssl rand -hex 32</code>）</li>
-            <li><code>SITE_PASSWORD</code></li>
-            <li><code>CLOUDFLARE_API_TOKEN</code></li>
-            <li>各注册商 Token（按需，未配置的入口会置灰）</li>
-          </ul>
-        </li>
-        <li>
-          <strong>无需数据库</strong>：域名与解析实时读写 Cloudflare / 注册商，
-          选中列表存 <code>localStorage</code>；只保留一个加密 Cookie 存"已解锁"。
-        </li>
-        <li>
-          <strong>服务端函数</strong>：<code>createServerFn</code> 会自动编译为
-          <code>/_serverFn/*</code>，Vercel 作为 Node Serverless 函数部署，
-          不需要额外 <code>api/</code> 目录或 <code>vercel.json</code>。
-        </li>
-        <li>访问 <code>/settings</code> 检查各 Token 状态；然后到 <code>/domains</code> 开始使用。</li>
-      </ol>
-      <p>
-        完整清单见项目根目录的
-        <code className="mx-1">DEPLOY_VERCEL.md</code>
-        （随仓库一起）。
-      </p>
-    </div>
-  );
-}
-
-function TokenRow({
-  name,
-  ok,
-  env,
-  hint,
-  link,
+function RegistrarCard({
+  reg,
+  presence,
+  onSaved,
 }: {
-  name: string;
-  ok: boolean | undefined;
-  env: string;
-  hint: string;
-  link: string;
+  reg: RegistrarDef;
+  presence: Record<string, boolean>;
+  onSaved: () => void;
 }) {
+  const saveFn = useServerFn(saveSecrets);
+  const [vals, setVals] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+
+  const configured = reg.fields.filter((f) => !f.optional).every((f) => presence[f.key]);
+  const hasInput = Object.values(vals).some((v) => v.trim() !== "");
+
+  async function save() {
+    const patch: Record<string, string> = {};
+    for (const [k, v] of Object.entries(vals)) if (v.trim() !== "") patch[k] = v.trim();
+    if (Object.keys(patch).length === 0) {
+      toast.info("没有要保存的改动");
+      return;
+    }
+    setSaving(true);
+    try {
+      await saveFn({ data: patch });
+      setVals({});
+      toast.success(`${reg.name} 凭证已保存`);
+      onSaved();
+    } catch (e: any) {
+      toast.error(e?.message || "保存失败");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function clearAll() {
+    const patch: Record<string, string> = {};
+    for (const f of reg.fields) patch[f.key] = "";
+    setSaving(true);
+    try {
+      await saveFn({ data: patch });
+      setVals({});
+      toast.success(`${reg.name} 凭证已清除`);
+      onSaved();
+    } catch (e: any) {
+      toast.error(e?.message || "清除失败");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <Card className="p-4">
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <div className="font-semibold">{name}</div>
-          <code className="text-xs text-muted-foreground break-all">{env}</code>
-        </div>
-        {ok ? (
+      <div className="flex items-center justify-between mb-3">
+        <div className="font-semibold">{reg.name}</div>
+        {configured ? (
           <span className="flex items-center gap-1 text-sm text-green-600 shrink-0 ml-2">
             <CheckCircle2 className="size-4" /> 已配置
           </span>
@@ -189,15 +202,44 @@ function TokenRow({
           </span>
         )}
       </div>
-      <p className="text-sm text-muted-foreground">{hint}</p>
-      <a
-        href={link}
-        target="_blank"
-        rel="noreferrer"
-        className="text-sm inline-flex items-center gap-1 text-primary mt-2 hover:underline"
-      >
-        获取 Token <ExternalLink className="size-3" />
-      </a>
+
+      <div className="space-y-2 mb-3">
+        {reg.fields.map((f) => (
+          <div key={f.key}>
+            <label className="text-xs text-muted-foreground">{f.label}</label>
+            <Input
+              type={f.secret ? "password" : "text"}
+              autoComplete="off"
+              placeholder={presence[f.key] ? "已保存（留空则不变）" : "未配置"}
+              value={vals[f.key] ?? ""}
+              onChange={(e) => setVals((s) => ({ ...s, [f.key]: e.target.value }))}
+            />
+          </div>
+        ))}
+      </div>
+
+      <p className="text-xs text-muted-foreground mb-2">{reg.hint}</p>
+
+      <div className="flex items-center justify-between">
+        <a
+          href={reg.link}
+          target="_blank"
+          rel="noreferrer"
+          className="text-sm inline-flex items-center gap-1 text-primary hover:underline"
+        >
+          获取凭证 <ExternalLink className="size-3" />
+        </a>
+        <div className="flex gap-2">
+          {configured && (
+            <Button variant="ghost" size="sm" onClick={clearAll} disabled={saving}>
+              清除
+            </Button>
+          )}
+          <Button size="sm" onClick={save} disabled={saving || !hasInput}>
+            {saving ? "保存中..." : "保存"}
+          </Button>
+        </div>
+      </div>
     </Card>
   );
 }

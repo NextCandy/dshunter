@@ -8,7 +8,9 @@ export const sessionConfig = {
   maxAge: 60 * 60 * 24 * 7,
   cookie: {
     httpOnly: true,
-    secure: true,
+    // 默认启用 Secure（仅 HTTPS 下发）。内网 http 部署时设 COOKIE_SECURE=false，
+    // 否则解锁后 Cookie 不会下发，会立刻被踢回登录页。
+    secure: process.env.COOKIE_SECURE !== "false",
     sameSite: "lax" as const,
     path: "/",
   },

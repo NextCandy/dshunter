@@ -1,15 +1,16 @@
 // Tencent Cloud Domain API — TC3-HMAC-SHA256 signature
 // Docs: https://cloud.tencent.com/document/api/242
 import { createHash, createHmac } from "node:crypto";
+import { getSecret } from "../secrets.server";
 
 const HOST = "domain.tencentcloudapi.com";
 const SERVICE = "domain";
 const VERSION = "2018-08-08";
 const REGION = "";
 
-function creds() {
-  const id = process.env.TENCENT_SECRET_ID;
-  const key = process.env.TENCENT_SECRET_KEY;
+async function creds() {
+  const id = await getSecret("TENCENT_SECRET_ID");
+  const key = await getSecret("TENCENT_SECRET_KEY");
   if (!id || !key) throw new Error("TENCENT_SECRET_ID / TENCENT_SECRET_KEY 未配置");
   return { id, key };
 }
@@ -22,7 +23,7 @@ function hmac(k: Buffer | string, s: string) {
 }
 
 async function tcCall(action: string, payload: Record<string, any>): Promise<any> {
-  const { id, key } = creds();
+  const { id, key } = await creds();
   const body = JSON.stringify(payload);
   const ts = Math.floor(Date.now() / 1000);
   const date = new Date(ts * 1000).toISOString().slice(0, 10);

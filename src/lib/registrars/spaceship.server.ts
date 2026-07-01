@@ -1,9 +1,11 @@
 // Spaceship API — https://docs.spaceship.dev/
+import { getSecret } from "../secrets.server";
+
 const BASE = "https://spaceship.dev/api/v1";
 
-function headers() {
-  const key = process.env.SPACESHIP_API_KEY;
-  const secret = process.env.SPACESHIP_API_SECRET;
+async function headers() {
+  const key = await getSecret("SPACESHIP_API_KEY");
+  const secret = await getSecret("SPACESHIP_API_SECRET");
   if (!key || !secret) throw new Error("SPACESHIP_API_KEY / SPACESHIP_API_SECRET 未配置");
   return {
     "X-Api-Key": key,
@@ -18,7 +20,7 @@ export async function spaceshipListDomains(): Promise<string[]> {
   const take = 100;
   while (true) {
     const res = await fetch(`${BASE}/domains?take=${take}&skip=${skip}`, {
-      headers: headers(),
+      headers: await headers(),
     });
     if (!res.ok) throw new Error(`Spaceship ${res.status}: ${await res.text()}`);
     const j: any = await res.json();
@@ -37,7 +39,7 @@ export async function spaceshipListDomains(): Promise<string[]> {
 export async function spaceshipSetNS(domain: string, ns: string[]): Promise<void> {
   const res = await fetch(`${BASE}/domains/${encodeURIComponent(domain)}/nameservers`, {
     method: "PUT",
-    headers: headers(),
+    headers: await headers(),
     body: JSON.stringify({ mode: "custom", hosts: ns }),
   });
   if (!res.ok) throw new Error(`Spaceship setNS ${res.status}: ${await res.text()}`);
