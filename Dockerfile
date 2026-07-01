@@ -6,14 +6,14 @@ WORKDIR /app
 
 # 安装依赖（利用缓存层）
 COPY package.json bun.lock* bun.lockb* bunfig.toml* ./
-RUN bun install --frozen-lockfile || bun install
+RUN bun install --frozen-lockfile
 
 # 拷贝源代码
 COPY . .
 
 # 使用 nitro 的 node-server preset 产出可在容器中运行的 Node 服务
 ENV NITRO_PRESET=node-server
-RUN bun run build
+RUN bun ./node_modules/vite/bin/vite.js build
 
 # ---------- Runtime ----------
 # node:20-alpine 同时支持 linux/amd64 和 linux/arm64，覆盖常见 NAS 架构
