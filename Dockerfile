@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ---------- Builder ----------
-FROM oven/bun:1.1 AS builder
+FROM oven/bun:1.3.14 AS builder
 WORKDIR /app
 
 # 安装依赖（利用缓存层）
