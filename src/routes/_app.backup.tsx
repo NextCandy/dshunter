@@ -3,10 +3,12 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import {
+  applyRestorePlan,
   diffAgainstLive,
   exportZoneRecords,
-  restoreFromBackup,
+  planRestoreFromBackup,
   type BackupZone,
+  type ZonePlan,
 } from "@/lib/backup.functions";
 import { useDomains } from "@/lib/domain-store";
 import { downloadBlob, toCsv } from "@/lib/csv";
@@ -22,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Download, Upload, GitCompare, RotateCcw } from "lucide-react";
+import { Download, Upload, GitCompare, RotateCcw, ListChecks, Play } from "lucide-react";
 
 export const Route = createFileRoute("/_app/backup")({
   head: () => ({ meta: [{ title: "备份与恢复 · DomainOps" }] }),
@@ -209,29 +211,82 @@ function DiffCol({ title, color, items }: { title: string; color: string; items:
 }
 
 function RestoreTab() {
-  const fn = useServerFn(restoreFromBackup);
+  const planFn = useServerFn(planRestoreFromBackup);
+  const applyFn = useServerFn(applyRestorePlan);
   const [backup, setBackup] = useState<BackupZone[] | null>(null);
   const [strategy, setStrategy] = useState<"add-missing" | "overwrite" | "replace-all">(
     "add-missing",
   );
-  const exec = useMutation({
-    mutationFn: () => {
+  const [plans, setPlans] = useState<ZonePlan[] | null>(null);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [applied, setApplied] = useState<
+    | null
+    | { results: { domain: string; created: number; updated: number; deleted: number; skipped: number; errors: string[] }[] }
+  >(null);
+
+  const planMut = useMutation({
+    mutationFn: async () => {
       if (!backup) throw new Error("先载入备份文件");
-      return fn({ data: { backup, strategy } });
+      const r = await planFn({ data: { backup, strategy } });
+      return r.plans;
     },
-    onSuccess: (r) => toast.success(`恢复完成：${r.results.length} 个 Zone`),
+    onSuccess: (p) => {
+      setPlans(p);
+      setApplied(null);
+      const total = p.reduce((s, z) => s + z.summary.create + z.summary.update + z.summary.delete, 0);
+      toast.success(`已生成计划：${total} 项变更（跳过不计）`);
+    },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const applyMut = useMutation({
+    mutationFn: async () => {
+      if (!plans) throw new Error("请先生成变更计划");
+      return applyFn({ data: { plans } });
+    },
+    onSuccess: (r) => {
+      setApplied(r);
+      toast.success(`已应用到 Cloudflare：${r.results.length} 个 Zone`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const totals = plans
+    ? plans.reduce(
+        (s, p) => ({
+          create: s.create + p.summary.create,
+          update: s.update + p.summary.update,
+          delete: s.delete + p.summary.delete,
+          skip: s.skip + p.summary.skip,
+        }),
+        { create: 0, update: 0, delete: 0, skip: 0 },
+      )
+    : null;
+  const hasChanges = totals && totals.create + totals.update + totals.delete > 0;
+
   return (
     <div className="space-y-4">
       <Card className="p-4 space-y-3">
         <div className="flex items-center gap-3 flex-wrap">
-          <BackupFileInput onLoad={setBackup} />
+          <BackupFileInput
+            onLoad={(z) => {
+              setBackup(z);
+              setPlans(null);
+              setApplied(null);
+            }}
+          />
           {backup && <Badge variant="secondary">{backup.length} zones 待恢复</Badge>}
         </div>
         <div>
           <div className="text-sm mb-1">恢复策略</div>
-          <Select value={strategy} onValueChange={(v) => setStrategy(v as any)}>
+          <Select
+            value={strategy}
+            onValueChange={(v) => {
+              setStrategy(v as any);
+              setPlans(null);
+              setApplied(null);
+            }}
+          >
             <SelectTrigger className="max-w-md"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="add-missing">仅补齐缺失（线上已有则跳过）</SelectItem>
@@ -240,13 +295,119 @@ function RestoreTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button variant="destructive" onClick={() => exec.mutate()} disabled={!backup || exec.isPending}>
-          {exec.isPending ? "执行中..." : "开始恢复"}
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button onClick={() => planMut.mutate()} disabled={!backup || planMut.isPending}>
+            <ListChecks className="size-4 mr-1" />
+            {planMut.isPending ? "计算中..." : "生成变更计划"}
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => applyMut.mutate()}
+            disabled={!plans || !hasChanges || applyMut.isPending}
+          >
+            <Play className="size-4 mr-1" />
+            {applyMut.isPending
+              ? "应用中..."
+              : hasChanges
+                ? `确认应用到 Cloudflare（${totals!.create + totals!.update + totals!.delete} 项）`
+                : "确认应用到 Cloudflare"}
+          </Button>
+        </div>
       </Card>
-      {exec.data && (
+
+      {plans && totals && (
+        <Card className="p-4 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="font-semibold">变更计划预览</div>
+            <Badge className="bg-green-600 hover:bg-green-600">创建 {totals.create}</Badge>
+            <Badge className="bg-blue-600 hover:bg-blue-600">更新 {totals.update}</Badge>
+            <Badge variant="destructive">删除 {totals.delete}</Badge>
+            <Badge variant="secondary">跳过 {totals.skip}</Badge>
+            {!hasChanges && (
+              <span className="text-sm text-muted-foreground ml-2">
+                线上已与备份一致，无需应用。
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            {plans.map((p) => {
+              const key = p.domain;
+              const isOpen = expanded[key] ?? false;
+              const visible = p.ops.filter((o) => o.op !== "skip");
+              return (
+                <div key={key} className="border rounded">
+                  <button
+                    className="w-full flex items-center gap-2 p-3 hover:bg-accent text-left"
+                    onClick={() => setExpanded({ ...expanded, [key]: !isOpen })}
+                  >
+                    <span className="font-mono font-semibold">{p.domain}</span>
+                    {p.missingZone ? (
+                      <Badge variant="destructive">Zone 不存在</Badge>
+                    ) : (
+                      <>
+                        <Badge variant="outline" className="text-green-600 border-green-600/40">
+                          +{p.summary.create}
+                        </Badge>
+                        <Badge variant="outline" className="text-blue-600 border-blue-600/40">
+                          ~{p.summary.update}
+                        </Badge>
+                        <Badge variant="outline" className="text-destructive border-destructive/40">
+                          −{p.summary.delete}
+                        </Badge>
+                        <Badge variant="outline" className="text-muted-foreground">
+                          skip {p.summary.skip}
+                        </Badge>
+                      </>
+                    )}
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      {isOpen ? "收起" : `展开 ${visible.length} 项`}
+                    </span>
+                  </button>
+                  {isOpen && (
+                    <div className="border-t max-h-80 overflow-auto">
+                      <table className="w-full text-xs">
+                        <thead className="bg-muted sticky top-0">
+                          <tr>
+                            <th className="p-2 text-left w-16">操作</th>
+                            <th className="p-2 text-left w-16">Type</th>
+                            <th className="p-2 text-left">Name</th>
+                            <th className="p-2 text-left">Content</th>
+                            <th className="p-2 text-left">详情</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {p.ops.map((o, i) => (
+                            <tr key={i} className="border-t">
+                              <td className="p-2">
+                                <OpBadge op={o.op} />
+                              </td>
+                              <td className="p-2 font-mono">{o.record.type}</td>
+                              <td className="p-2 font-mono">{o.record.name}</td>
+                              <td className="p-2 font-mono truncate max-w-xs">{o.record.content}</td>
+                              <td className="p-2 text-muted-foreground">
+                                {o.op === "update"
+                                  ? `ttl ${o.from.ttl}→${o.record.ttl}, proxied ${o.from.proxied}→${o.record.proxied}${o.from.priority !== o.record.priority ? `, prio ${o.from.priority ?? "-"}→${o.record.priority ?? "-"}` : ""}`
+                                  : o.op === "skip"
+                                    ? o.reason
+                                    : `ttl ${o.record.ttl}${["A","AAAA","CNAME"].includes(o.record.type) ? `, proxied ${o.record.proxied}` : ""}`}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {applied && (
         <Card className="p-4">
-          <div className="font-semibold mb-2">结果</div>
+          <div className="font-semibold mb-2">应用结果</div>
           <div className="border rounded max-h-96 overflow-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted sticky top-0">
@@ -260,16 +421,18 @@ function RestoreTab() {
                 </tr>
               </thead>
               <tbody>
-                {exec.data.results.map((r) => (
+                {applied.results.map((r) => (
                   <tr key={r.domain} className="border-t">
                     <td className="p-2 font-mono">{r.domain}</td>
                     <td className="p-2 text-center text-green-600">{r.created}</td>
                     <td className="p-2 text-center text-blue-600">{r.updated}</td>
-                    <td className="p-2 text-center text-orange-600">{r.deleted}</td>
+                    <td className="p-2 text-center text-destructive">{r.deleted}</td>
                     <td className="p-2 text-center text-muted-foreground">{r.skipped}</td>
                     <td className="p-2 text-xs text-destructive">
-                      {r.errors.length === 0 ? "—" : r.errors.slice(0, 3).join("; ")}
-                      {r.errors.length > 3 && ` (+${r.errors.length - 3})`}
+                      {r.errors.length === 0
+                        ? "—"
+                        : r.errors.slice(0, 3).join("; ") +
+                          (r.errors.length > 3 ? ` (+${r.errors.length - 3})` : "")}
                     </td>
                   </tr>
                 ))}
@@ -280,4 +443,15 @@ function RestoreTab() {
       )}
     </div>
   );
+}
+
+function OpBadge({ op }: { op: "create" | "update" | "delete" | "skip" }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    create: { label: "创建", cls: "bg-green-600 hover:bg-green-600 text-white" },
+    update: { label: "更新", cls: "bg-blue-600 hover:bg-blue-600 text-white" },
+    delete: { label: "删除", cls: "bg-destructive text-destructive-foreground" },
+    skip: { label: "跳过", cls: "bg-muted text-muted-foreground" },
+  };
+  const { label, cls } = map[op];
+  return <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${cls}`}>{label}</span>;
 }
