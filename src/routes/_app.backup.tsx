@@ -3,10 +3,12 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import {
+  applyRestorePlan,
   diffAgainstLive,
   exportZoneRecords,
-  restoreFromBackup,
+  planRestoreFromBackup,
   type BackupZone,
+  type ZonePlan,
 } from "@/lib/backup.functions";
 import { useDomains } from "@/lib/domain-store";
 import { downloadBlob, toCsv } from "@/lib/csv";
@@ -22,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Download, Upload, GitCompare, RotateCcw } from "lucide-react";
+import { Download, Upload, GitCompare, RotateCcw, ListChecks, Play } from "lucide-react";
 
 export const Route = createFileRoute("/_app/backup")({
   head: () => ({ meta: [{ title: "备份与恢复 · DomainOps" }] }),
