@@ -22,7 +22,7 @@ import {
   Clock3,
 } from "lucide-react";
 
-export const Route = createFileRoute("/_app/")({
+export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({ meta: [{ title: "仪表盘 · dshunter" }] }),
   component: Dashboard,
 });
@@ -39,6 +39,7 @@ const SOURCES: { key: string; label: string }[] = [
 ];
 
 type LastPull = { source: string; count: number; cloudflareCount: number; at: string };
+type TokenStatus = Record<string, boolean | undefined>;
 
 function Dashboard() {
   const tokenFn = useServerFn(getTokenStatus);
@@ -50,16 +51,15 @@ function Dashboard() {
   const [lastPull, setLastPull] = useState<LastPull | null>(null);
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("domainops.lastPull");
+      const raw = localStorage.getItem("dshunter.lastPull");
       if (raw) setLastPull(JSON.parse(raw));
     } catch {
       // 忽略损坏的缓存
     }
   }, []);
 
-  const configuredCount = tokens.data
-    ? SOURCES.filter((s) => (tokens.data as any)[s.key]).length
-    : null;
+  const tokenData = tokens.data as TokenStatus | undefined;
+  const configuredCount = tokenData ? SOURCES.filter((s) => tokenData[s.key]).length : null;
 
   return (
     <div className="max-w-6xl">
@@ -150,9 +150,7 @@ function Dashboard() {
             </Button>
           )}
         </div>
-        {health.data?.error && (
-          <p className="mt-2 text-xs text-destructive">{health.data.error}</p>
-        )}
+        {health.data?.error && <p className="mt-2 text-xs text-destructive">{health.data.error}</p>}
         {health.error && (
           <p className="mt-2 text-xs text-destructive">{(health.error as Error).message}</p>
         )}
@@ -168,7 +166,7 @@ function Dashboard() {
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {SOURCES.map((s) => {
-            const ok = tokens.data ? Boolean((tokens.data as any)[s.key]) : undefined;
+            const ok = tokenData ? Boolean(tokenData[s.key]) : undefined;
             return (
               <div
                 key={s.key}

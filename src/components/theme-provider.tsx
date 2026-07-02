@@ -18,7 +18,7 @@ function getStorage(): Storage | null {
 
 function readStoredTheme(): Theme {
   const saved = getStorage()?.getItem(STORAGE_KEY);
-  return saved === "light" || saved === "dark" || saved === "system" ? saved : "system";
+  return saved === "light" || saved === "dark" || saved === "system" ? saved : "light";
 }
 
 function resolveSystem(): "light" | "dark" {
@@ -72,7 +72,7 @@ export function useTheme() {
 export const themeInitScript = `
 (function(){try{
   var k='${STORAGE_KEY}';
-  var t=localStorage.getItem(k)||'system';
+  var t=localStorage.getItem(k)||'light';
   var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);
   var r=document.documentElement;
   if(d){r.classList.add('dark');}

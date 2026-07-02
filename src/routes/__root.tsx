@@ -75,22 +75,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "dshunter · 批量域名管理" },
+      { title: "DS Hunter · 域名资产管理系统" },
       {
         name: "description",
-        content: "批量将域名接入 Cloudflare，通过注册商 API 或粘贴导入，一键管理 DNS 解析记录。",
+        content: "DS Hunter 集中同步、管理、监控域名资产，统一处理注册商与 DNS 工作流。",
       },
-      { property: "og:title", content: "dshunter · 批量域名管理" },
+      { property: "og:title", content: "DS Hunter · 域名资产管理系统" },
       {
         property: "og:description",
-        content: "批量将域名接入 Cloudflare，通过注册商 API 或粘贴导入，一键管理 DNS 解析记录。",
+        content: "集中同步、管理、监控域名资产，统一处理注册商与 DNS 工作流。",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "dshunter · 批量域名管理" },
+      { name: "twitter:title", content: "DS Hunter · 域名资产管理系统" },
       {
         name: "twitter:description",
-        content: "批量将域名接入 Cloudflare，通过注册商 API 或粘贴导入，一键管理 DNS 解析记录。",
+        content: "集中同步、管理、监控域名资产，统一处理注册商与 DNS 工作流。",
       },
     ],
     links: [

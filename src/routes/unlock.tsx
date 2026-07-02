@@ -10,8 +10,8 @@ import { Lock } from "lucide-react";
 export const Route = createFileRoute("/unlock")({
   head: () => ({
     meta: [
-      { title: "登录 · dshunter" },
-      { name: "description", content: "登录 dshunter 域名管理控制台。" },
+      { title: "登录 · DS Hunter" },
+      { name: "description", content: "登录 DS Hunter 域名资产管理终端。" },
     ],
   }),
   component: UnlockPage,
@@ -32,7 +32,7 @@ function UnlockPage() {
     try {
       const r = await unlock({ data: { email, password: pw } });
       if (r.ok) {
-        await router.navigate({ to: "/" });
+        await router.navigate({ to: "/domains" });
       } else {
         setErr("账号或密码错误");
       }
@@ -44,13 +44,13 @@ function UnlockPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-sm p-8">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-sm p-8 shadow-xl">
         <div className="flex flex-col items-center gap-2 mb-6">
           <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center">
             <Lock className="size-6 text-primary" />
           </div>
-          <h1 className="text-xl font-semibold">dshunter</h1>
+          <h1 className="text-xl font-semibold">DS Hunter</h1>
           <p className="text-sm text-muted-foreground">请输入后台账号和密码</p>
         </div>
         <form onSubmit={onSubmit} className="space-y-3">

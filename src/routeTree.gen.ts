@@ -11,12 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnlockRouteImport } from './routes/unlock'
 import { Route as AppRouteImport } from './routes/_app'
-import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRegistrarSyncJobsRouteImport } from './routes/api/registrar-sync-jobs'
 import { Route as ApiRegistrarDomainsRouteImport } from './routes/api/registrar-domains'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppRecordsRouteImport } from './routes/_app.records'
 import { Route as AppDomainsRouteImport } from './routes/_app.domains'
+import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppBindRouteImport } from './routes/_app.bind'
 import { Route as AppBackupRouteImport } from './routes/_app.backup'
 import { Route as ApiRegistrarDomainsIdRouteImport } from './routes/api/registrar-domains/$id'
@@ -31,10 +32,10 @@ const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppIndexRoute = AppIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRegistrarSyncJobsRoute = ApiRegistrarSyncJobsRouteImport.update({
   id: '/api/registrar-sync-jobs',
@@ -61,6 +62,11 @@ const AppDomainsRoute = AppDomainsRouteImport.update({
   path: '/domains',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBindRoute = AppBindRouteImport.update({
   id: '/bind',
   path: '/bind',
@@ -84,10 +90,11 @@ const ApiRegistrarsIdSyncDomainsRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AppIndexRoute
+  '/': typeof IndexRoute
   '/unlock': typeof UnlockRoute
   '/backup': typeof AppBackupRoute
   '/bind': typeof AppBindRoute
+  '/dashboard': typeof AppDashboardRoute
   '/domains': typeof AppDomainsRoute
   '/records': typeof AppRecordsRoute
   '/settings': typeof AppSettingsRoute
@@ -97,30 +104,32 @@ export interface FileRoutesByFullPath {
   '/api/registrars/$id/sync-domains': typeof ApiRegistrarsIdSyncDomainsRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/unlock': typeof UnlockRoute
   '/backup': typeof AppBackupRoute
   '/bind': typeof AppBindRoute
+  '/dashboard': typeof AppDashboardRoute
   '/domains': typeof AppDomainsRoute
   '/records': typeof AppRecordsRoute
   '/settings': typeof AppSettingsRoute
   '/api/registrar-domains': typeof ApiRegistrarDomainsRouteWithChildren
   '/api/registrar-sync-jobs': typeof ApiRegistrarSyncJobsRoute
-  '/': typeof AppIndexRoute
   '/api/registrar-domains/$id': typeof ApiRegistrarDomainsIdRoute
   '/api/registrars/$id/sync-domains': typeof ApiRegistrarsIdSyncDomainsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/unlock': typeof UnlockRoute
   '/_app/backup': typeof AppBackupRoute
   '/_app/bind': typeof AppBindRoute
+  '/_app/dashboard': typeof AppDashboardRoute
   '/_app/domains': typeof AppDomainsRoute
   '/_app/records': typeof AppRecordsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/api/registrar-domains': typeof ApiRegistrarDomainsRouteWithChildren
   '/api/registrar-sync-jobs': typeof ApiRegistrarSyncJobsRoute
-  '/_app/': typeof AppIndexRoute
   '/api/registrar-domains/$id': typeof ApiRegistrarDomainsIdRoute
   '/api/registrars/$id/sync-domains': typeof ApiRegistrarsIdSyncDomainsRoute
 }
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/unlock'
     | '/backup'
     | '/bind'
+    | '/dashboard'
     | '/domains'
     | '/records'
     | '/settings'
@@ -140,34 +150,37 @@ export interface FileRouteTypes {
     | '/api/registrars/$id/sync-domains'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/unlock'
     | '/backup'
     | '/bind'
+    | '/dashboard'
     | '/domains'
     | '/records'
     | '/settings'
     | '/api/registrar-domains'
     | '/api/registrar-sync-jobs'
-    | '/'
     | '/api/registrar-domains/$id'
     | '/api/registrars/$id/sync-domains'
   id:
     | '__root__'
+    | '/'
     | '/_app'
     | '/unlock'
     | '/_app/backup'
     | '/_app/bind'
+    | '/_app/dashboard'
     | '/_app/domains'
     | '/_app/records'
     | '/_app/settings'
     | '/api/registrar-domains'
     | '/api/registrar-sync-jobs'
-    | '/_app/'
     | '/api/registrar-domains/$id'
     | '/api/registrars/$id/sync-domains'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   UnlockRoute: typeof UnlockRoute
   ApiRegistrarDomainsRoute: typeof ApiRegistrarDomainsRouteWithChildren
@@ -191,12 +204,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/': {
-      id: '/_app/'
+    '/': {
+      id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/registrar-sync-jobs': {
       id: '/api/registrar-sync-jobs'
@@ -233,6 +246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDomainsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/bind': {
       id: '/_app/bind'
       path: '/bind'
@@ -267,19 +287,19 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppBackupRoute: typeof AppBackupRoute
   AppBindRoute: typeof AppBindRoute
+  AppDashboardRoute: typeof AppDashboardRoute
   AppDomainsRoute: typeof AppDomainsRoute
   AppRecordsRoute: typeof AppRecordsRoute
   AppSettingsRoute: typeof AppSettingsRoute
-  AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppBackupRoute: AppBackupRoute,
   AppBindRoute: AppBindRoute,
+  AppDashboardRoute: AppDashboardRoute,
   AppDomainsRoute: AppDomainsRoute,
   AppRecordsRoute: AppRecordsRoute,
   AppSettingsRoute: AppSettingsRoute,
-  AppIndexRoute: AppIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -296,6 +316,7 @@ const ApiRegistrarDomainsRouteWithChildren =
   ApiRegistrarDomainsRoute._addFileChildren(ApiRegistrarDomainsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   UnlockRoute: UnlockRoute,
   ApiRegistrarDomainsRoute: ApiRegistrarDomainsRouteWithChildren,
