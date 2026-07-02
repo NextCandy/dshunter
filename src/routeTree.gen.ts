@@ -9,204 +9,880 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as UnlockRouteImport } from './routes/unlock'
-import { Route as AppRouteImport } from './routes/_app'
-import { Route as AppIndexRouteImport } from './routes/_app.index'
-import { Route as AppSettingsRouteImport } from './routes/_app.settings'
-import { Route as AppRecordsRouteImport } from './routes/_app.records'
-import { Route as AppDomainsRouteImport } from './routes/_app.domains'
-import { Route as AppBindRouteImport } from './routes/_app.bind'
-import { Route as AppBackupRouteImport } from './routes/_app.backup'
+import { Route as WatchlistRouteImport } from './routes/watchlist'
+import { Route as RegistrarDomainsRouteImport } from './routes/registrar-domains'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PendingRouteImport } from './routes/pending'
+import { Route as MyDomainsRouteImport } from './routes/my-domains'
+import { Route as IdeasRouteImport } from './routes/ideas'
+import { Route as EnrichRouteImport } from './routes/enrich'
+import { Route as DiscoverRouteImport } from './routes/discover'
+import { Route as DeletedRouteImport } from './routes/deleted'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuctionsRouteImport } from './routes/auctions'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as ToolsBatchRdapRouteImport } from './routes/tools.batch-rdap'
+import { Route as EnrichIdRouteImport } from './routes/enrich.$id'
+import { Route as DomainsDomainRouteImport } from './routes/domains.$domain'
+import { Route as ApiRegistrarSyncJobsRouteImport } from './routes/api/registrar-sync-jobs'
+import { Route as ApiRegistrarDomainsRouteImport } from './routes/api/registrar-domains'
+import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminTldsRouteImport } from './routes/admin.tlds'
+import { Route as AdminSourcesRouteImport } from './routes/admin.sources'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminScoringRouteImport } from './routes/admin.scoring'
+import { Route as AdminRegistrarsRouteImport } from './routes/admin.registrars'
+import { Route as AdminPricingRouteImport } from './routes/admin.pricing'
+import { Route as AdminJobsRouteImport } from './routes/admin.jobs'
+import { Route as AdminHistoryRouteImport } from './routes/admin.history'
+import { Route as ApiRegistrarDomainsIdRouteImport } from './routes/api/registrar-domains/$id'
+import { Route as ApiRegistrarsIdSyncDomainsRouteImport } from './routes/api/registrars/$id/sync-domains'
+import { Route as ApiPublicRpcNameRouteImport } from './routes/api/public/rpc/$name'
+import { Route as ApiPublicHooksSyncPricesRouteImport } from './routes/api/public/hooks/sync-prices'
+import { Route as ApiPublicAuthSignupRouteImport } from './routes/api/public/auth/signup'
+import { Route as ApiPublicAuthRefreshRouteImport } from './routes/api/public/auth/refresh'
+import { Route as ApiPublicAuthMeRouteImport } from './routes/api/public/auth/me'
+import { Route as ApiPublicAuthLoginRouteImport } from './routes/api/public/auth/login'
+import { Route as ApiPublicJobsJobIdDownloadRouteImport } from './routes/api/public/jobs/$jobId/download'
+import { Route as ApiPublicEnrichIdDownloadRouteImport } from './routes/api/public/enrich.$id.download'
 
-const UnlockRoute = UnlockRouteImport.update({
-  id: '/unlock',
-  path: '/unlock',
+const WatchlistRoute = WatchlistRouteImport.update({
+  id: '/watchlist',
+  path: '/watchlist',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
+const RegistrarDomainsRoute = RegistrarDomainsRouteImport.update({
+  id: '/registrar-domains',
+  path: '/registrar-domains',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppIndexRoute = AppIndexRouteImport.update({
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PendingRoute = PendingRouteImport.update({
+  id: '/pending',
+  path: '/pending',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyDomainsRoute = MyDomainsRouteImport.update({
+  id: '/my-domains',
+  path: '/my-domains',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IdeasRoute = IdeasRouteImport.update({
+  id: '/ideas',
+  path: '/ideas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnrichRoute = EnrichRouteImport.update({
+  id: '/enrich',
+  path: '/enrich',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiscoverRoute = DiscoverRouteImport.update({
+  id: '/discover',
+  path: '/discover',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeletedRoute = DeletedRouteImport.update({
+  id: '/deleted',
+  path: '/deleted',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuctionsRoute = AuctionsRouteImport.update({
+  id: '/auctions',
+  path: '/auctions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const ToolsBatchRdapRoute = ToolsBatchRdapRouteImport.update({
+  id: '/tools/batch-rdap',
+  path: '/tools/batch-rdap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnrichIdRoute = EnrichIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => EnrichRoute,
+} as any)
+const DomainsDomainRoute = DomainsDomainRouteImport.update({
+  id: '/domains/$domain',
+  path: '/domains/$domain',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRegistrarSyncJobsRoute = ApiRegistrarSyncJobsRouteImport.update({
+  id: '/api/registrar-sync-jobs',
+  path: '/api/registrar-sync-jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRegistrarDomainsRoute = ApiRegistrarDomainsRouteImport.update({
+  id: '/api/registrar-domains',
+  path: '/api/registrar-domains',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTldsRoute = AdminTldsRouteImport.update({
+  id: '/tlds',
+  path: '/tlds',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSourcesRoute = AdminSourcesRouteImport.update({
+  id: '/sources',
+  path: '/sources',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AdminRoute,
 } as any)
-const AppRecordsRoute = AppRecordsRouteImport.update({
-  id: '/records',
-  path: '/records',
-  getParentRoute: () => AppRoute,
+const AdminScoringRoute = AdminScoringRouteImport.update({
+  id: '/scoring',
+  path: '/scoring',
+  getParentRoute: () => AdminRoute,
 } as any)
-const AppDomainsRoute = AppDomainsRouteImport.update({
-  id: '/domains',
-  path: '/domains',
-  getParentRoute: () => AppRoute,
+const AdminRegistrarsRoute = AdminRegistrarsRouteImport.update({
+  id: '/registrars',
+  path: '/registrars',
+  getParentRoute: () => AdminRoute,
 } as any)
-const AppBindRoute = AppBindRouteImport.update({
-  id: '/bind',
-  path: '/bind',
-  getParentRoute: () => AppRoute,
+const AdminPricingRoute = AdminPricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => AdminRoute,
 } as any)
-const AppBackupRoute = AppBackupRouteImport.update({
-  id: '/backup',
-  path: '/backup',
-  getParentRoute: () => AppRoute,
+const AdminJobsRoute = AdminJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => AdminRoute,
 } as any)
+const AdminHistoryRoute = AdminHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AdminRoute,
+} as any)
+const ApiRegistrarDomainsIdRoute = ApiRegistrarDomainsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiRegistrarDomainsRoute,
+} as any)
+const ApiRegistrarsIdSyncDomainsRoute =
+  ApiRegistrarsIdSyncDomainsRouteImport.update({
+    id: '/api/registrars/$id/sync-domains',
+    path: '/api/registrars/$id/sync-domains',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicRpcNameRoute = ApiPublicRpcNameRouteImport.update({
+  id: '/api/public/rpc/$name',
+  path: '/api/public/rpc/$name',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksSyncPricesRoute =
+  ApiPublicHooksSyncPricesRouteImport.update({
+    id: '/api/public/hooks/sync-prices',
+    path: '/api/public/hooks/sync-prices',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAuthSignupRoute = ApiPublicAuthSignupRouteImport.update({
+  id: '/api/public/auth/signup',
+  path: '/api/public/auth/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAuthRefreshRoute = ApiPublicAuthRefreshRouteImport.update({
+  id: '/api/public/auth/refresh',
+  path: '/api/public/auth/refresh',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAuthMeRoute = ApiPublicAuthMeRouteImport.update({
+  id: '/api/public/auth/me',
+  path: '/api/public/auth/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAuthLoginRoute = ApiPublicAuthLoginRouteImport.update({
+  id: '/api/public/auth/login',
+  path: '/api/public/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicJobsJobIdDownloadRoute =
+  ApiPublicJobsJobIdDownloadRouteImport.update({
+    id: '/api/public/jobs/$jobId/download',
+    path: '/api/public/jobs/$jobId/download',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicEnrichIdDownloadRoute =
+  ApiPublicEnrichIdDownloadRouteImport.update({
+    id: '/api/public/enrich/$id/download',
+    path: '/api/public/enrich/$id/download',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AppIndexRoute
-  '/unlock': typeof UnlockRoute
-  '/backup': typeof AppBackupRoute
-  '/bind': typeof AppBindRoute
-  '/domains': typeof AppDomainsRoute
-  '/records': typeof AppRecordsRoute
-  '/settings': typeof AppSettingsRoute
+  '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/auctions': typeof AuctionsRoute
+  '/auth': typeof AuthRoute
+  '/deleted': typeof DeletedRoute
+  '/discover': typeof DiscoverRoute
+  '/enrich': typeof EnrichRouteWithChildren
+  '/ideas': typeof IdeasRoute
+  '/my-domains': typeof MyDomainsRoute
+  '/pending': typeof PendingRoute
+  '/pricing': typeof PricingRoute
+  '/registrar-domains': typeof RegistrarDomainsRoute
+  '/watchlist': typeof WatchlistRoute
+  '/admin/history': typeof AdminHistoryRoute
+  '/admin/jobs': typeof AdminJobsRoute
+  '/admin/pricing': typeof AdminPricingRoute
+  '/admin/registrars': typeof AdminRegistrarsRoute
+  '/admin/scoring': typeof AdminScoringRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sources': typeof AdminSourcesRoute
+  '/admin/tlds': typeof AdminTldsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/api/health': typeof ApiHealthRoute
+  '/api/registrar-domains': typeof ApiRegistrarDomainsRouteWithChildren
+  '/api/registrar-sync-jobs': typeof ApiRegistrarSyncJobsRoute
+  '/domains/$domain': typeof DomainsDomainRoute
+  '/enrich/$id': typeof EnrichIdRoute
+  '/tools/batch-rdap': typeof ToolsBatchRdapRoute
+  '/admin/': typeof AdminIndexRoute
+  '/api/registrar-domains/$id': typeof ApiRegistrarDomainsIdRoute
+  '/api/public/auth/login': typeof ApiPublicAuthLoginRoute
+  '/api/public/auth/me': typeof ApiPublicAuthMeRoute
+  '/api/public/auth/refresh': typeof ApiPublicAuthRefreshRoute
+  '/api/public/auth/signup': typeof ApiPublicAuthSignupRoute
+  '/api/public/hooks/sync-prices': typeof ApiPublicHooksSyncPricesRoute
+  '/api/public/rpc/$name': typeof ApiPublicRpcNameRoute
+  '/api/registrars/$id/sync-domains': typeof ApiRegistrarsIdSyncDomainsRoute
+  '/api/public/enrich/$id/download': typeof ApiPublicEnrichIdDownloadRoute
+  '/api/public/jobs/$jobId/download': typeof ApiPublicJobsJobIdDownloadRoute
 }
 export interface FileRoutesByTo {
-  '/unlock': typeof UnlockRoute
-  '/backup': typeof AppBackupRoute
-  '/bind': typeof AppBindRoute
-  '/domains': typeof AppDomainsRoute
-  '/records': typeof AppRecordsRoute
-  '/settings': typeof AppSettingsRoute
-  '/': typeof AppIndexRoute
+  '/': typeof IndexRoute
+  '/auctions': typeof AuctionsRoute
+  '/auth': typeof AuthRoute
+  '/deleted': typeof DeletedRoute
+  '/discover': typeof DiscoverRoute
+  '/enrich': typeof EnrichRouteWithChildren
+  '/ideas': typeof IdeasRoute
+  '/my-domains': typeof MyDomainsRoute
+  '/pending': typeof PendingRoute
+  '/pricing': typeof PricingRoute
+  '/registrar-domains': typeof RegistrarDomainsRoute
+  '/watchlist': typeof WatchlistRoute
+  '/admin/history': typeof AdminHistoryRoute
+  '/admin/jobs': typeof AdminJobsRoute
+  '/admin/pricing': typeof AdminPricingRoute
+  '/admin/registrars': typeof AdminRegistrarsRoute
+  '/admin/scoring': typeof AdminScoringRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sources': typeof AdminSourcesRoute
+  '/admin/tlds': typeof AdminTldsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/api/health': typeof ApiHealthRoute
+  '/api/registrar-domains': typeof ApiRegistrarDomainsRouteWithChildren
+  '/api/registrar-sync-jobs': typeof ApiRegistrarSyncJobsRoute
+  '/domains/$domain': typeof DomainsDomainRoute
+  '/enrich/$id': typeof EnrichIdRoute
+  '/tools/batch-rdap': typeof ToolsBatchRdapRoute
+  '/admin': typeof AdminIndexRoute
+  '/api/registrar-domains/$id': typeof ApiRegistrarDomainsIdRoute
+  '/api/public/auth/login': typeof ApiPublicAuthLoginRoute
+  '/api/public/auth/me': typeof ApiPublicAuthMeRoute
+  '/api/public/auth/refresh': typeof ApiPublicAuthRefreshRoute
+  '/api/public/auth/signup': typeof ApiPublicAuthSignupRoute
+  '/api/public/hooks/sync-prices': typeof ApiPublicHooksSyncPricesRoute
+  '/api/public/rpc/$name': typeof ApiPublicRpcNameRoute
+  '/api/registrars/$id/sync-domains': typeof ApiRegistrarsIdSyncDomainsRoute
+  '/api/public/enrich/$id/download': typeof ApiPublicEnrichIdDownloadRoute
+  '/api/public/jobs/$jobId/download': typeof ApiPublicJobsJobIdDownloadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_app': typeof AppRouteWithChildren
-  '/unlock': typeof UnlockRoute
-  '/_app/backup': typeof AppBackupRoute
-  '/_app/bind': typeof AppBindRoute
-  '/_app/domains': typeof AppDomainsRoute
-  '/_app/records': typeof AppRecordsRoute
-  '/_app/settings': typeof AppSettingsRoute
-  '/_app/': typeof AppIndexRoute
+  '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/auctions': typeof AuctionsRoute
+  '/auth': typeof AuthRoute
+  '/deleted': typeof DeletedRoute
+  '/discover': typeof DiscoverRoute
+  '/enrich': typeof EnrichRouteWithChildren
+  '/ideas': typeof IdeasRoute
+  '/my-domains': typeof MyDomainsRoute
+  '/pending': typeof PendingRoute
+  '/pricing': typeof PricingRoute
+  '/registrar-domains': typeof RegistrarDomainsRoute
+  '/watchlist': typeof WatchlistRoute
+  '/admin/history': typeof AdminHistoryRoute
+  '/admin/jobs': typeof AdminJobsRoute
+  '/admin/pricing': typeof AdminPricingRoute
+  '/admin/registrars': typeof AdminRegistrarsRoute
+  '/admin/scoring': typeof AdminScoringRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sources': typeof AdminSourcesRoute
+  '/admin/tlds': typeof AdminTldsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/api/health': typeof ApiHealthRoute
+  '/api/registrar-domains': typeof ApiRegistrarDomainsRouteWithChildren
+  '/api/registrar-sync-jobs': typeof ApiRegistrarSyncJobsRoute
+  '/domains/$domain': typeof DomainsDomainRoute
+  '/enrich/$id': typeof EnrichIdRoute
+  '/tools/batch-rdap': typeof ToolsBatchRdapRoute
+  '/admin/': typeof AdminIndexRoute
+  '/api/registrar-domains/$id': typeof ApiRegistrarDomainsIdRoute
+  '/api/public/auth/login': typeof ApiPublicAuthLoginRoute
+  '/api/public/auth/me': typeof ApiPublicAuthMeRoute
+  '/api/public/auth/refresh': typeof ApiPublicAuthRefreshRoute
+  '/api/public/auth/signup': typeof ApiPublicAuthSignupRoute
+  '/api/public/hooks/sync-prices': typeof ApiPublicHooksSyncPricesRoute
+  '/api/public/rpc/$name': typeof ApiPublicRpcNameRoute
+  '/api/registrars/$id/sync-domains': typeof ApiRegistrarsIdSyncDomainsRoute
+  '/api/public/enrich/$id/download': typeof ApiPublicEnrichIdDownloadRoute
+  '/api/public/jobs/$jobId/download': typeof ApiPublicJobsJobIdDownloadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/unlock'
-    | '/backup'
-    | '/bind'
-    | '/domains'
-    | '/records'
-    | '/settings'
+    | '/admin'
+    | '/auctions'
+    | '/auth'
+    | '/deleted'
+    | '/discover'
+    | '/enrich'
+    | '/ideas'
+    | '/my-domains'
+    | '/pending'
+    | '/pricing'
+    | '/registrar-domains'
+    | '/watchlist'
+    | '/admin/history'
+    | '/admin/jobs'
+    | '/admin/pricing'
+    | '/admin/registrars'
+    | '/admin/scoring'
+    | '/admin/settings'
+    | '/admin/sources'
+    | '/admin/tlds'
+    | '/admin/users'
+    | '/api/health'
+    | '/api/registrar-domains'
+    | '/api/registrar-sync-jobs'
+    | '/domains/$domain'
+    | '/enrich/$id'
+    | '/tools/batch-rdap'
+    | '/admin/'
+    | '/api/registrar-domains/$id'
+    | '/api/public/auth/login'
+    | '/api/public/auth/me'
+    | '/api/public/auth/refresh'
+    | '/api/public/auth/signup'
+    | '/api/public/hooks/sync-prices'
+    | '/api/public/rpc/$name'
+    | '/api/registrars/$id/sync-domains'
+    | '/api/public/enrich/$id/download'
+    | '/api/public/jobs/$jobId/download'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/unlock'
-    | '/backup'
-    | '/bind'
-    | '/domains'
-    | '/records'
-    | '/settings'
     | '/'
+    | '/auctions'
+    | '/auth'
+    | '/deleted'
+    | '/discover'
+    | '/enrich'
+    | '/ideas'
+    | '/my-domains'
+    | '/pending'
+    | '/pricing'
+    | '/registrar-domains'
+    | '/watchlist'
+    | '/admin/history'
+    | '/admin/jobs'
+    | '/admin/pricing'
+    | '/admin/registrars'
+    | '/admin/scoring'
+    | '/admin/settings'
+    | '/admin/sources'
+    | '/admin/tlds'
+    | '/admin/users'
+    | '/api/health'
+    | '/api/registrar-domains'
+    | '/api/registrar-sync-jobs'
+    | '/domains/$domain'
+    | '/enrich/$id'
+    | '/tools/batch-rdap'
+    | '/admin'
+    | '/api/registrar-domains/$id'
+    | '/api/public/auth/login'
+    | '/api/public/auth/me'
+    | '/api/public/auth/refresh'
+    | '/api/public/auth/signup'
+    | '/api/public/hooks/sync-prices'
+    | '/api/public/rpc/$name'
+    | '/api/registrars/$id/sync-domains'
+    | '/api/public/enrich/$id/download'
+    | '/api/public/jobs/$jobId/download'
   id:
     | '__root__'
-    | '/_app'
-    | '/unlock'
-    | '/_app/backup'
-    | '/_app/bind'
-    | '/_app/domains'
-    | '/_app/records'
-    | '/_app/settings'
-    | '/_app/'
+    | '/'
+    | '/admin'
+    | '/auctions'
+    | '/auth'
+    | '/deleted'
+    | '/discover'
+    | '/enrich'
+    | '/ideas'
+    | '/my-domains'
+    | '/pending'
+    | '/pricing'
+    | '/registrar-domains'
+    | '/watchlist'
+    | '/admin/history'
+    | '/admin/jobs'
+    | '/admin/pricing'
+    | '/admin/registrars'
+    | '/admin/scoring'
+    | '/admin/settings'
+    | '/admin/sources'
+    | '/admin/tlds'
+    | '/admin/users'
+    | '/api/health'
+    | '/api/registrar-domains'
+    | '/api/registrar-sync-jobs'
+    | '/domains/$domain'
+    | '/enrich/$id'
+    | '/tools/batch-rdap'
+    | '/admin/'
+    | '/api/registrar-domains/$id'
+    | '/api/public/auth/login'
+    | '/api/public/auth/me'
+    | '/api/public/auth/refresh'
+    | '/api/public/auth/signup'
+    | '/api/public/hooks/sync-prices'
+    | '/api/public/rpc/$name'
+    | '/api/registrars/$id/sync-domains'
+    | '/api/public/enrich/$id/download'
+    | '/api/public/jobs/$jobId/download'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AppRoute: typeof AppRouteWithChildren
-  UnlockRoute: typeof UnlockRoute
+  IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  AuctionsRoute: typeof AuctionsRoute
+  AuthRoute: typeof AuthRoute
+  DeletedRoute: typeof DeletedRoute
+  DiscoverRoute: typeof DiscoverRoute
+  EnrichRoute: typeof EnrichRouteWithChildren
+  IdeasRoute: typeof IdeasRoute
+  MyDomainsRoute: typeof MyDomainsRoute
+  PendingRoute: typeof PendingRoute
+  PricingRoute: typeof PricingRoute
+  RegistrarDomainsRoute: typeof RegistrarDomainsRoute
+  WatchlistRoute: typeof WatchlistRoute
+  ApiHealthRoute: typeof ApiHealthRoute
+  ApiRegistrarDomainsRoute: typeof ApiRegistrarDomainsRouteWithChildren
+  ApiRegistrarSyncJobsRoute: typeof ApiRegistrarSyncJobsRoute
+  DomainsDomainRoute: typeof DomainsDomainRoute
+  ToolsBatchRdapRoute: typeof ToolsBatchRdapRoute
+  ApiPublicAuthLoginRoute: typeof ApiPublicAuthLoginRoute
+  ApiPublicAuthMeRoute: typeof ApiPublicAuthMeRoute
+  ApiPublicAuthRefreshRoute: typeof ApiPublicAuthRefreshRoute
+  ApiPublicAuthSignupRoute: typeof ApiPublicAuthSignupRoute
+  ApiPublicHooksSyncPricesRoute: typeof ApiPublicHooksSyncPricesRoute
+  ApiPublicRpcNameRoute: typeof ApiPublicRpcNameRoute
+  ApiRegistrarsIdSyncDomainsRoute: typeof ApiRegistrarsIdSyncDomainsRoute
+  ApiPublicEnrichIdDownloadRoute: typeof ApiPublicEnrichIdDownloadRoute
+  ApiPublicJobsJobIdDownloadRoute: typeof ApiPublicJobsJobIdDownloadRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/unlock': {
-      id: '/unlock'
-      path: '/unlock'
-      fullPath: '/unlock'
-      preLoaderRoute: typeof UnlockRouteImport
+    '/watchlist': {
+      id: '/watchlist'
+      path: '/watchlist'
+      fullPath: '/watchlist'
+      preLoaderRoute: typeof WatchlistRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
+    '/registrar-domains': {
+      id: '/registrar-domains'
+      path: '/registrar-domains'
+      fullPath: '/registrar-domains'
+      preLoaderRoute: typeof RegistrarDomainsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/': {
-      id: '/_app/'
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pending': {
+      id: '/pending'
+      path: '/pending'
+      fullPath: '/pending'
+      preLoaderRoute: typeof PendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-domains': {
+      id: '/my-domains'
+      path: '/my-domains'
+      fullPath: '/my-domains'
+      preLoaderRoute: typeof MyDomainsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ideas': {
+      id: '/ideas'
+      path: '/ideas'
+      fullPath: '/ideas'
+      preLoaderRoute: typeof IdeasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/enrich': {
+      id: '/enrich'
+      path: '/enrich'
+      fullPath: '/enrich'
+      preLoaderRoute: typeof EnrichRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discover': {
+      id: '/discover'
+      path: '/discover'
+      fullPath: '/discover'
+      preLoaderRoute: typeof DiscoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deleted': {
+      id: '/deleted'
+      path: '/deleted'
+      fullPath: '/deleted'
+      preLoaderRoute: typeof DeletedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auctions': {
+      id: '/auctions'
+      path: '/auctions'
+      fullPath: '/auctions'
+      preLoaderRoute: typeof AuctionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/settings': {
-      id: '/_app/settings'
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/tools/batch-rdap': {
+      id: '/tools/batch-rdap'
+      path: '/tools/batch-rdap'
+      fullPath: '/tools/batch-rdap'
+      preLoaderRoute: typeof ToolsBatchRdapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/enrich/$id': {
+      id: '/enrich/$id'
+      path: '/$id'
+      fullPath: '/enrich/$id'
+      preLoaderRoute: typeof EnrichIdRouteImport
+      parentRoute: typeof EnrichRoute
+    }
+    '/domains/$domain': {
+      id: '/domains/$domain'
+      path: '/domains/$domain'
+      fullPath: '/domains/$domain'
+      preLoaderRoute: typeof DomainsDomainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/registrar-sync-jobs': {
+      id: '/api/registrar-sync-jobs'
+      path: '/api/registrar-sync-jobs'
+      fullPath: '/api/registrar-sync-jobs'
+      preLoaderRoute: typeof ApiRegistrarSyncJobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/registrar-domains': {
+      id: '/api/registrar-domains'
+      path: '/api/registrar-domains'
+      fullPath: '/api/registrar-domains'
+      preLoaderRoute: typeof ApiRegistrarDomainsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/tlds': {
+      id: '/admin/tlds'
+      path: '/tlds'
+      fullPath: '/admin/tlds'
+      preLoaderRoute: typeof AdminTldsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/sources': {
+      id: '/admin/sources'
+      path: '/sources'
+      fullPath: '/admin/sources'
+      preLoaderRoute: typeof AdminSourcesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
       path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/_app/records': {
-      id: '/_app/records'
-      path: '/records'
-      fullPath: '/records'
-      preLoaderRoute: typeof AppRecordsRouteImport
-      parentRoute: typeof AppRoute
+    '/admin/scoring': {
+      id: '/admin/scoring'
+      path: '/scoring'
+      fullPath: '/admin/scoring'
+      preLoaderRoute: typeof AdminScoringRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/_app/domains': {
-      id: '/_app/domains'
-      path: '/domains'
-      fullPath: '/domains'
-      preLoaderRoute: typeof AppDomainsRouteImport
-      parentRoute: typeof AppRoute
+    '/admin/registrars': {
+      id: '/admin/registrars'
+      path: '/registrars'
+      fullPath: '/admin/registrars'
+      preLoaderRoute: typeof AdminRegistrarsRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/_app/bind': {
-      id: '/_app/bind'
-      path: '/bind'
-      fullPath: '/bind'
-      preLoaderRoute: typeof AppBindRouteImport
-      parentRoute: typeof AppRoute
+    '/admin/pricing': {
+      id: '/admin/pricing'
+      path: '/pricing'
+      fullPath: '/admin/pricing'
+      preLoaderRoute: typeof AdminPricingRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/_app/backup': {
-      id: '/_app/backup'
-      path: '/backup'
-      fullPath: '/backup'
-      preLoaderRoute: typeof AppBackupRouteImport
-      parentRoute: typeof AppRoute
+    '/admin/jobs': {
+      id: '/admin/jobs'
+      path: '/jobs'
+      fullPath: '/admin/jobs'
+      preLoaderRoute: typeof AdminJobsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/history': {
+      id: '/admin/history'
+      path: '/history'
+      fullPath: '/admin/history'
+      preLoaderRoute: typeof AdminHistoryRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/api/registrar-domains/$id': {
+      id: '/api/registrar-domains/$id'
+      path: '/$id'
+      fullPath: '/api/registrar-domains/$id'
+      preLoaderRoute: typeof ApiRegistrarDomainsIdRouteImport
+      parentRoute: typeof ApiRegistrarDomainsRoute
+    }
+    '/api/registrars/$id/sync-domains': {
+      id: '/api/registrars/$id/sync-domains'
+      path: '/api/registrars/$id/sync-domains'
+      fullPath: '/api/registrars/$id/sync-domains'
+      preLoaderRoute: typeof ApiRegistrarsIdSyncDomainsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/rpc/$name': {
+      id: '/api/public/rpc/$name'
+      path: '/api/public/rpc/$name'
+      fullPath: '/api/public/rpc/$name'
+      preLoaderRoute: typeof ApiPublicRpcNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/sync-prices': {
+      id: '/api/public/hooks/sync-prices'
+      path: '/api/public/hooks/sync-prices'
+      fullPath: '/api/public/hooks/sync-prices'
+      preLoaderRoute: typeof ApiPublicHooksSyncPricesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/auth/signup': {
+      id: '/api/public/auth/signup'
+      path: '/api/public/auth/signup'
+      fullPath: '/api/public/auth/signup'
+      preLoaderRoute: typeof ApiPublicAuthSignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/auth/refresh': {
+      id: '/api/public/auth/refresh'
+      path: '/api/public/auth/refresh'
+      fullPath: '/api/public/auth/refresh'
+      preLoaderRoute: typeof ApiPublicAuthRefreshRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/auth/me': {
+      id: '/api/public/auth/me'
+      path: '/api/public/auth/me'
+      fullPath: '/api/public/auth/me'
+      preLoaderRoute: typeof ApiPublicAuthMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/auth/login': {
+      id: '/api/public/auth/login'
+      path: '/api/public/auth/login'
+      fullPath: '/api/public/auth/login'
+      preLoaderRoute: typeof ApiPublicAuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/jobs/$jobId/download': {
+      id: '/api/public/jobs/$jobId/download'
+      path: '/api/public/jobs/$jobId/download'
+      fullPath: '/api/public/jobs/$jobId/download'
+      preLoaderRoute: typeof ApiPublicJobsJobIdDownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/enrich/$id/download': {
+      id: '/api/public/enrich/$id/download'
+      path: '/api/public/enrich/$id/download'
+      fullPath: '/api/public/enrich/$id/download'
+      preLoaderRoute: typeof ApiPublicEnrichIdDownloadRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface AppRouteChildren {
-  AppBackupRoute: typeof AppBackupRoute
-  AppBindRoute: typeof AppBindRoute
-  AppDomainsRoute: typeof AppDomainsRoute
-  AppRecordsRoute: typeof AppRecordsRoute
-  AppSettingsRoute: typeof AppSettingsRoute
-  AppIndexRoute: typeof AppIndexRoute
+interface AdminRouteChildren {
+  AdminHistoryRoute: typeof AdminHistoryRoute
+  AdminJobsRoute: typeof AdminJobsRoute
+  AdminPricingRoute: typeof AdminPricingRoute
+  AdminRegistrarsRoute: typeof AdminRegistrarsRoute
+  AdminScoringRoute: typeof AdminScoringRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminSourcesRoute: typeof AdminSourcesRoute
+  AdminTldsRoute: typeof AdminTldsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
-const AppRouteChildren: AppRouteChildren = {
-  AppBackupRoute: AppBackupRoute,
-  AppBindRoute: AppBindRoute,
-  AppDomainsRoute: AppDomainsRoute,
-  AppRecordsRoute: AppRecordsRoute,
-  AppSettingsRoute: AppSettingsRoute,
-  AppIndexRoute: AppIndexRoute,
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminHistoryRoute: AdminHistoryRoute,
+  AdminJobsRoute: AdminJobsRoute,
+  AdminPricingRoute: AdminPricingRoute,
+  AdminRegistrarsRoute: AdminRegistrarsRoute,
+  AdminScoringRoute: AdminScoringRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminSourcesRoute: AdminSourcesRoute,
+  AdminTldsRoute: AdminTldsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 
-const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface EnrichRouteChildren {
+  EnrichIdRoute: typeof EnrichIdRoute
+}
+
+const EnrichRouteChildren: EnrichRouteChildren = {
+  EnrichIdRoute: EnrichIdRoute,
+}
+
+const EnrichRouteWithChildren =
+  EnrichRoute._addFileChildren(EnrichRouteChildren)
+
+interface ApiRegistrarDomainsRouteChildren {
+  ApiRegistrarDomainsIdRoute: typeof ApiRegistrarDomainsIdRoute
+}
+
+const ApiRegistrarDomainsRouteChildren: ApiRegistrarDomainsRouteChildren = {
+  ApiRegistrarDomainsIdRoute: ApiRegistrarDomainsIdRoute,
+}
+
+const ApiRegistrarDomainsRouteWithChildren =
+  ApiRegistrarDomainsRoute._addFileChildren(ApiRegistrarDomainsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-  AppRoute: AppRouteWithChildren,
-  UnlockRoute: UnlockRoute,
+  IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
+  AuctionsRoute: AuctionsRoute,
+  AuthRoute: AuthRoute,
+  DeletedRoute: DeletedRoute,
+  DiscoverRoute: DiscoverRoute,
+  EnrichRoute: EnrichRouteWithChildren,
+  IdeasRoute: IdeasRoute,
+  MyDomainsRoute: MyDomainsRoute,
+  PendingRoute: PendingRoute,
+  PricingRoute: PricingRoute,
+  RegistrarDomainsRoute: RegistrarDomainsRoute,
+  WatchlistRoute: WatchlistRoute,
+  ApiHealthRoute: ApiHealthRoute,
+  ApiRegistrarDomainsRoute: ApiRegistrarDomainsRouteWithChildren,
+  ApiRegistrarSyncJobsRoute: ApiRegistrarSyncJobsRoute,
+  DomainsDomainRoute: DomainsDomainRoute,
+  ToolsBatchRdapRoute: ToolsBatchRdapRoute,
+  ApiPublicAuthLoginRoute: ApiPublicAuthLoginRoute,
+  ApiPublicAuthMeRoute: ApiPublicAuthMeRoute,
+  ApiPublicAuthRefreshRoute: ApiPublicAuthRefreshRoute,
+  ApiPublicAuthSignupRoute: ApiPublicAuthSignupRoute,
+  ApiPublicHooksSyncPricesRoute: ApiPublicHooksSyncPricesRoute,
+  ApiPublicRpcNameRoute: ApiPublicRpcNameRoute,
+  ApiRegistrarsIdSyncDomainsRoute: ApiRegistrarsIdSyncDomainsRoute,
+  ApiPublicEnrichIdDownloadRoute: ApiPublicEnrichIdDownloadRoute,
+  ApiPublicJobsJobIdDownloadRoute: ApiPublicJobsJobIdDownloadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
