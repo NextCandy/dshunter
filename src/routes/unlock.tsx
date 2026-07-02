@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { unlockSite } from "@/lib/gate.functions";
@@ -18,7 +18,6 @@ export const Route = createFileRoute("/unlock")({
 });
 
 function UnlockPage() {
-  const router = useRouter();
   const unlock = useServerFn(unlockSite);
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -32,7 +31,7 @@ function UnlockPage() {
     try {
       const r = await unlock({ data: { email, password: pw } });
       if (r.ok) {
-        await router.navigate({ to: "/domains" });
+        window.location.assign("/domains");
       } else {
         setErr("账号或密码错误");
       }
