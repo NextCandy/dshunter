@@ -17,3 +17,4 @@ dist
 npm-debug.log*
 bun-debug.log*
 coverage
+.codex-backups

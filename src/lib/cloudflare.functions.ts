@@ -12,11 +12,48 @@ export const listAccounts = createServerFn({ method: "GET" })
     return { accounts: await cfListAccounts() };
   });
 
+// 仪表盘用：Token 配置/有效性 + Zone 概览，一次探测。
+export const getCfHealth = createServerFn({ method: "GET" })
+  .middleware([requireGate])
+  .handler(async () => {
+    const cf = await import("./registrars/cloudflare.server");
+    const tokenStatus = await cf.cfVerifyToken();
+    if (tokenStatus !== "active") {
+      return { tokenStatus, zoneCount: null as number | null, activeZones: null as number | null, error: null as string | null };
+    }
+    try {
+      const zones = await cf.cfListZones();
+      return {
+        tokenStatus,
+        zoneCount: zones.length,
+        activeZones: zones.filter((z) => z.status === "active").length,
+        error: null as string | null,
+      };
+    } catch (e: any) {
+      // Token 有效但缺 Zone:Read 等权限
+      return { tokenStatus, zoneCount: null, activeZones: null, error: String(e?.message || e) };
+    }
+  });
+
 export const listZones = createServerFn({ method: "GET" })
   .middleware([requireGate])
   .handler(async () => {
     const { cfListZones } = await import("./registrars/cloudflare.server");
-    return { zones: await cfListZones() };
+    const { resolveDomainsNameservers } = await import("./nameservers.server");
+    const zones = await cfListZones();
+    const nsMap = await resolveDomainsNameservers(zones.map((z) => z.name));
+    return {
+      zones: zones.map((zone) => {
+        const ns = nsMap.get(zone.name);
+        return {
+          ...zone,
+          current_name_servers: ns?.nameservers ?? [],
+          ns_status: ns?.nsStatus ?? "unknown",
+          ns_provider: ns?.nsProvider,
+          ns_error: ns?.nsError,
+        };
+      }),
+    };
   });
 
 type BindResult = {
@@ -36,7 +73,7 @@ export const bindDomains = createServerFn({ method: "POST" })
     (d: {
       domains: string[];
       accountId: string;
-      updateNS: null | "spaceship" | "dynadot" | "cf-registrar";
+      updateNS: null | "spaceship" | "dynadot" | "porkbun" | "cf-registrar";
       cfRegAccountId?: string;
       activationCheck: boolean;
     }) => d,
@@ -90,6 +127,9 @@ export const bindDomains = createServerFn({ method: "POST" })
             } else if (data.updateNS === "dynadot") {
               const { dynadotSetNS } = await import("./registrars/dynadot.server");
               await dynadotSetNS(domain, r.nameServers);
+            } else if (data.updateNS === "porkbun") {
+              const { porkbunSetNS } = await import("./registrars/porkbun.server");
+              await porkbunSetNS(domain, r.nameServers);
             } else if (data.updateNS === "cf-registrar") {
               if (!data.cfRegAccountId) throw new Error("需要 CF Registrar accountId");
               const { cfRegSetNS } = await import("./registrars/cf-registrar.server");
@@ -141,6 +181,12 @@ function fullName(zone: string, name: string): string {
   return `${n}.${zone}`;
 }
 
+function relativeName(zone: string, name: string): string {
+  if (!name || name === zone) return "@";
+  if (name.endsWith(`.${zone}`)) return name.slice(0, -(zone.length + 1));
+  return name;
+}
+
 async function resolveZoneIds(domains: string[]) {
   const cf = await import("./registrars/cloudflare.server");
   const map = new Map<string, string>();
@@ -150,6 +196,151 @@ async function resolveZoneIds(domains: string[]) {
   }
   return map;
 }
+
+// 结构化错误分类，前端据此给出不同的引导（去设置 / 去绑定 / 改 Token 权限）。
+export type DnsListError = {
+  ok: false;
+  kind: "no-token" | "token-invalid" | "forbidden" | "no-zone" | "api";
+  message: string;
+};
+
+async function classifyCfError(message: string): Promise<DnsListError> {
+  const cf = await import("./registrars/cloudflare.server");
+  // 认证类错误码：进一步区分 Token 无效还是权限不足
+  if (/\b(10000|9109|6003|9103|9207)\b/.test(message)) {
+    const verify = await cf.cfVerifyToken();
+    if (verify === "invalid" || verify === "unconfigured") {
+      return {
+        ok: false,
+        kind: "token-invalid",
+        message: "Cloudflare Token 无效（verify 未通过）：请到设置页重新生成并保存 Token",
+      };
+    }
+    return {
+      ok: false,
+      kind: "forbidden",
+      message:
+        "Cloudflare Token 有效但权限不足：DNS 读取需要 Zone:DNS:Read，新增/修改/删除需要 Zone:DNS:Edit（Zone 管理另需 Zone:Zone:Read/Edit）",
+    };
+  }
+  return { ok: false, kind: "api", message };
+}
+
+export const listDnsRecords = createServerFn({ method: "POST" })
+  .middleware([requireGate])
+  .inputValidator((d: { domain: string }) => d)
+  .handler(async ({ data }) => {
+    const domain = data.domain.trim().toLowerCase();
+    if (!domain) {
+      return { ok: false, kind: "api", message: "需要域名" } satisfies DnsListError;
+    }
+    const { getSecret } = await import("./secrets.server");
+    if (!(await getSecret("CLOUDFLARE_API_TOKEN"))) {
+      return {
+        ok: false,
+        kind: "no-token",
+        message: "Cloudflare API Token 未配置，请先到设置页保存 Token",
+      } satisfies DnsListError;
+    }
+    const cf = await import("./registrars/cloudflare.server");
+    let zone: any;
+    try {
+      zone = await cf.cfFindZoneByName(domain);
+    } catch (e: any) {
+      return classifyCfError(String(e?.message || e));
+    }
+    if (!zone) {
+      return {
+        ok: false,
+        kind: "no-zone",
+        message: `${domain} 尚未接入 Cloudflare（Zone 不存在）`,
+      } satisfies DnsListError;
+    }
+    try {
+      const records = await cf.cfListDNS(zone.id);
+      return {
+        ok: true as const,
+        zone: {
+          id: zone.id,
+          name: zone.name,
+          status: zone.status,
+          name_servers: zone.name_servers,
+        },
+        records: records.map((r: any) => ({
+          id: r.id,
+          zoneId: zone.id,
+          domain,
+          type: r.type,
+          name: relativeName(domain, r.name),
+          content: r.content,
+          ttl: r.ttl,
+          proxied: r.proxied,
+          priority: r.priority,
+          modified_on: r.modified_on,
+        })),
+      };
+    } catch (e: any) {
+      return classifyCfError(String(e?.message || e));
+    }
+  });
+
+export const saveDnsRecord = createServerFn({ method: "POST" })
+  .middleware([requireGate])
+  .inputValidator(
+    (d: {
+      domain: string;
+      id?: string;
+      type: string;
+      name: string;
+      content: string;
+      ttl?: number;
+      proxied?: boolean;
+      priority?: number;
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    const domain = data.domain.trim().toLowerCase();
+    if (!domain) throw new Error("需要域名");
+    if (!data.type || !data.content?.trim()) throw new Error("记录类型和内容不能为空");
+    const cf = await import("./registrars/cloudflare.server");
+    const zone = await cf.cfFindZoneByName(domain);
+    if (!zone) throw new Error(`Cloudflare Zone 不存在：${domain}`);
+
+    const payload: any = {
+      type: data.type,
+      name: fullName(domain, data.name),
+      content: data.content.trim(),
+      ttl: data.ttl ?? 1,
+    };
+    if (["A", "AAAA", "CNAME"].includes(data.type)) payload.proxied = Boolean(data.proxied);
+    if (data.priority !== undefined) payload.priority = data.priority;
+
+    const r = data.id
+      ? await cf.cfUpdateDNS(zone.id, data.id, payload)
+      : await cf.cfCreateDNS(zone.id, payload);
+    if (!r.success) throw new Error(cf.cfErr(r));
+    return { ok: true as const, record: r.result };
+  });
+
+export const deleteDnsRecord = createServerFn({ method: "POST" })
+  .middleware([requireGate])
+  .inputValidator((d: { domain: string; id: string; zoneId?: string }) => d)
+  .handler(async ({ data }) => {
+    if (!data.id) throw new Error("缺少 DNS 记录 ID");
+    const cf = await import("./registrars/cloudflare.server");
+    let zoneId = data.zoneId;
+    if (!zoneId) {
+      const domain = data.domain.trim().toLowerCase();
+      if (!domain) throw new Error("需要域名");
+      const zone = await cf.cfFindZoneByName(domain);
+      if (!zone) throw new Error(`Cloudflare Zone 不存在：${domain}`);
+      zoneId = zone.id as string;
+    }
+
+    const r = await cf.cfDeleteDNS(zoneId, data.id);
+    if (!r.success) throw new Error(cf.cfErr(r));
+    return { ok: true as const };
+  });
 
 export const bulkAddRecords = createServerFn({ method: "POST" })
   .middleware([requireGate])
@@ -163,7 +354,7 @@ export const bulkAddRecords = createServerFn({ method: "POST" })
       type: string;
       name: string;
       content: string;
-      status: "created" | "updated" | "error" | "no-zone";
+      status: "created" | "updated" | "skipped" | "error" | "no-zone";
       error?: string;
     }[] = [];
 
@@ -196,6 +387,15 @@ export const bulkAddRecords = createServerFn({ method: "POST" })
             (e) => e.type === payload.type && e.name === payload.name,
           );
           if (existing) {
+            const same =
+              existing.content === payload.content &&
+              existing.ttl === payload.ttl &&
+              (payload.proxied === undefined || Boolean(existing.proxied) === payload.proxied) &&
+              (payload.priority === undefined || existing.priority === payload.priority);
+            if (same) {
+              results.push({ ...rec, status: "skipped" });
+              continue;
+            }
             const r = await cf.cfUpdateDNS(zid, existing.id, payload);
             results.push({
               ...rec,

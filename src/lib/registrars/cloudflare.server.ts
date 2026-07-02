@@ -22,21 +22,82 @@ export async function cf<T = any>(
   init: RequestInit = {},
 ): Promise<CFResp<T>> {
   const token = await cfToken();
-  const res = await fetch(`${CF_BASE}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      ...(init.headers || {}),
-    },
-  });
-  const json = (await res.json().catch(() => ({}))) as CFResp<T>;
-  return json;
+  let res: Response;
+  try {
+    res = await fetch(`${CF_BASE}${path}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...(init.headers || {}),
+      },
+    });
+  } catch (e: any) {
+    // 网络层失败（DNS/超时/断网），构造统一错误结构，避免上层拿到 undefined
+    return {
+      success: false,
+      errors: [{ code: -1, message: `无法连接 Cloudflare API：${e?.message || "网络错误"}` }],
+      result: undefined as T,
+    };
+  }
+  const json = (await res.json().catch(() => null)) as CFResp<T> | null;
+  if (json && typeof json.success === "boolean") return json;
+  // 非 JSON 响应（如网关 5xx / 限流页面）
+  return {
+    success: false,
+    errors: [
+      {
+        code: res.status,
+        message:
+          res.status === 429
+            ? "Cloudflare API 限流（429），请稍后重试"
+            : `Cloudflare API 返回异常（HTTP ${res.status}）`,
+      },
+    ],
+    result: undefined as T,
+  };
 }
+
+// 常见 Cloudflare 错误码 → 中文解释。未列出的码原样展示 message。
+const CF_ERROR_HINTS: Record<number, string> = {
+  10000:
+    "Token 无效或权限不足：请到设置页检查 Token；DNS 读取需要 Zone:DNS:Read，新增/修改/删除需要 Zone:DNS:Edit，Zone 管理需要 Zone:Zone:Read/Edit",
+  9109: "Token 已过期或被撤销，请重新生成并在设置页更新",
+  6003: "请求头无效：Token 格式可能有误（多余空格/换行），请重新粘贴保存",
+  9103: "Token 无效：X-Auth-Key/Email 与 Bearer Token 混用或格式错误",
+  7003: "请求的资源不存在：Zone 或记录可能已被删除",
+  1061: "该域名的 Zone 已存在",
+  1097: "域名被 Cloudflare 拒绝（疑似滥用名单），无法创建 Zone",
+  1099: "域名格式无效或 TLD 不受支持",
+  1105: "操作过于频繁被限流，请稍后重试",
+  81044: "DNS 记录不存在或已被删除",
+  81053: "已存在相同的 A/AAAA/CNAME 记录",
+  81057: "已存在内容完全相同的记录，无需重复添加",
+  81058: "相同名称的记录数量已达上限",
+  9106: "缺少 Account 权限：列出账户需要 Token 具有 Account:Read（Account Settings:Read）",
+  9207: "Token 权限不足以访问该资源",
+};
 
 export function cfErr(r: CFResp): string {
   if (r.success) return "";
-  return (r.errors || []).map((e) => `${e.code}:${e.message}`).join("; ") || "unknown error";
+  return (
+    (r.errors || [])
+      .map((e) => {
+        const hint = CF_ERROR_HINTS[e.code];
+        return hint ? `${e.code} ${e.message}（${hint}）` : `${e.code}:${e.message}`;
+      })
+      .join("; ") || "unknown error"
+  );
+}
+
+// 校验 Token 本身是否有效（不校验具体权限）。任何有效 Token 都能调用此端点。
+// 返回 "active" | "invalid" | "unconfigured"。
+export async function cfVerifyToken(): Promise<"active" | "invalid" | "unconfigured"> {
+  const t = await getSecret("CLOUDFLARE_API_TOKEN");
+  if (!t) return "unconfigured";
+  const r = await cf<{ status: string }>("/user/tokens/verify");
+  if (r.success && r.result?.status === "active") return "active";
+  return "invalid";
 }
 
 export async function cfListAccounts() {

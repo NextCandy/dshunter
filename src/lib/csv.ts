@@ -62,7 +62,7 @@ const rowSchema = z.object({
   priority: z.number().int().min(0).max(65535).optional(),
 });
 
-function validateContent(type: string, content: string): string | null {
+export function validateContent(type: string, content: string): string | null {
   if (type === "A" && !ipv4Re.test(content)) return "A 记录 content 必须是 IPv4 地址";
   if (type === "AAAA" && (!ipv6Re.test(content) || !content.includes(":")))
     return "AAAA 记录 content 必须是 IPv6 地址";

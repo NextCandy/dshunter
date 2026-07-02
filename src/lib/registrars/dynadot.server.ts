@@ -1,11 +1,12 @@
-// Dynadot JSON API v3 — https://api.dynadot.com/api3.json
+// Dynadot Legacy JSON API v3 — https://api.dynadot.com/api3.json
+// Dynadot 页面里的“API 生产密钥 / Production Key”就是这里使用的 key。
 import { getSecret } from "../secrets.server";
 
 const BASE = "https://api.dynadot.com/api3.json";
 
 async function key(): Promise<string> {
   const k = await getSecret("DYNADOT_API_KEY");
-  if (!k) throw new Error("DYNADOT_API_KEY 未配置");
+  if (!k) throw new Error("DYNADOT_API_KEY（Dynadot API 生产密钥）未配置");
   return k;
 }
 

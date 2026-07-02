@@ -29,7 +29,7 @@ const REGISTRARS: RegistrarDef[] = [
   {
     id: "cloudflare",
     name: "Cloudflare",
-    hint: "需权限：Zone:Read/Edit、DNS:Edit（可选 Account:Read 用于列出账户）。Cloudflare Registrar 域名共用同一 Token。",
+    hint: "Cloudflare Registrar 域名共用同一 Token。建议创建自定义 Token 并按下方清单授权。",
     link: "https://dash.cloudflare.com/profile/api-tokens",
     fields: [{ key: "CLOUDFLARE_API_TOKEN", label: "API Token", secret: true }],
   },
@@ -46,9 +46,24 @@ const REGISTRARS: RegistrarDef[] = [
   {
     id: "dynadot",
     name: "Dynadot",
-    hint: "Dynadot 后台 → Tools → API → 启用 API v3。",
+    hint:
+      "Dynadot 后台 → Dynadot API。当前域名同步/改 NS 使用 Legacy API v3，只需要 API 生产密钥；RESTful API 的密钥可先保存备用。请在 Dynadot 的 IP 地址白名单中加入 NAS 出口 IP。",
     link: "https://www.dynadot.com/account/domain/setting/api.html",
-    fields: [{ key: "DYNADOT_API_KEY", label: "API Key", secret: true }],
+    fields: [
+      { key: "DYNADOT_API_KEY", label: "API 生产密钥（Production Key）", secret: true },
+      { key: "DYNADOT_API_SECRET", label: "密钥（Secret Key，RESTful API 可选）", secret: true, optional: true },
+    ],
+  },
+  {
+    id: "porkbun",
+    name: "Porkbun",
+    hint:
+      "Porkbun 后台 → Account → API。生成 API Key 与 Secret API Key；如启用 IP 或域名限制，请允许 NAS 出口 IP 和目标域名。",
+    link: "https://porkbun.com/account/api",
+    fields: [
+      { key: "PORKBUN_API_KEY", label: "API Key" },
+      { key: "PORKBUN_SECRET_API_KEY", label: "Secret API Key", secret: true },
+    ],
   },
   {
     id: "namecheap",
@@ -219,6 +234,22 @@ function RegistrarCard({
       </div>
 
       <p className="text-xs text-muted-foreground mb-2">{reg.hint}</p>
+
+      {reg.id === "cloudflare" && (
+        <div className="mb-3 rounded-md border bg-muted/30 p-3 text-xs">
+          <div className="mb-1.5 font-medium">Token 权限清单（按使用的功能勾选）：</div>
+          <ul className="space-y-1 font-mono text-muted-foreground">
+            <li>Zone → Zone → Read <span className="font-sans">（查找 / 列出 Zone，必需）</span></li>
+            <li>Zone → Zone → Edit <span className="font-sans">（批量绑定创建 Zone）</span></li>
+            <li>Zone → DNS → Read <span className="font-sans">（读取 DNS 记录）</span></li>
+            <li>Zone → DNS → Edit <span className="font-sans">（新增 / 修改 / 删除 DNS 记录）</span></li>
+            <li>Account → Account Settings → Read <span className="font-sans">（批量绑定时列出账户）</span></li>
+          </ul>
+          <div className="mt-1.5 text-muted-foreground">
+            Zone Resources 建议选择 All zones（或至少覆盖要管理的 Zone）。
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center justify-between">
         <a

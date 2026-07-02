@@ -24,11 +24,19 @@ function AppLayout() {
   const router = useRouter();
   const lock = useServerFn(lockSite);
   return (
-    <div className="min-h-screen flex bg-background text-foreground">
-      <aside className="w-56 border-r border-border p-4 flex flex-col gap-1">
-        <div className="px-2 py-3 mb-2">
-          <div className="font-bold text-lg">dshunter</div>
-          <div className="text-xs text-muted-foreground">批量域名管理</div>
+    <div className="flex h-screen overflow-hidden bg-background text-foreground">
+      <aside className="flex w-56 shrink-0 flex-col gap-1 overflow-y-auto border-r border-border p-3">
+        <div className="mb-2 flex items-center gap-2.5 px-2 py-3">
+          <div className="flex size-9 items-center justify-center rounded-lg border bg-muted/50">
+            <Globe className="size-4.5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-base font-bold leading-tight tracking-tight">dshunter</div>
+            <div className="text-[11px] text-muted-foreground">域名运营工作台</div>
+          </div>
+        </div>
+        <div className="px-3 pb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+          域名
         </div>
         <NavItem to="/" icon={<LayoutDashboard className="size-4" />}>
           仪表盘
@@ -42,17 +50,20 @@ function AppLayout() {
         <NavItem to="/records" icon={<ListTree className="size-4" />}>
           解析记录
         </NavItem>
+        <div className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+          系统
+        </div>
         <NavItem to="/backup" icon={<DatabaseBackup className="size-4" />}>
           备份与恢复
         </NavItem>
         <NavItem to="/settings" icon={<Settings className="size-4" />}>
           设置
         </NavItem>
-        <div className="mt-auto">
+        <div className="mt-auto border-t pt-2">
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start"
+            className="w-full justify-start text-muted-foreground hover:text-foreground"
             onClick={async () => {
               await lock();
               router.navigate({ to: "/unlock" });
@@ -62,7 +73,7 @@ function AppLayout() {
           </Button>
         </div>
       </aside>
-      <main className="flex-1 p-8 overflow-auto">
+      <main className="flex-1 overflow-auto p-8">
         <Outlet />
       </main>
     </div>
@@ -81,10 +92,11 @@ function NavItem({
   return (
     <Link
       to={to}
-      className="flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-accent"
+      className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
       activeOptions={{ exact: to === "/" }}
       activeProps={{
-        className: "flex items-center gap-2 px-3 py-2 rounded-md text-sm bg-accent font-medium",
+        className:
+          "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm bg-accent font-medium text-foreground",
       }}
     >
       {icon}
