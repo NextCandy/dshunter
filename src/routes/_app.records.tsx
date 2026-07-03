@@ -22,6 +22,7 @@ import {
   type ValidatedRecord,
 } from "@/lib/csv";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -457,7 +458,7 @@ function SingleDomainTab({ domains }: { domains: string[] }) {
                 )}
                 {filtered.map((r) => (
                   <tr key={r.id} className="border-t hover:bg-accent/30">
-                    <td className="p-3"><Badge variant="secondary">{r.type}</Badge></td>
+                    <td className="p-3">{typeBadge(r.type)}</td>
                     <td className="p-3 font-mono text-xs">{r.name}</td>
                     <td className="max-w-md truncate p-3 font-mono text-xs">{r.content}</td>
                     <td className="p-3 font-mono text-xs">{r.ttl === 1 ? "Auto" : r.ttl}</td>
@@ -930,7 +931,7 @@ function DeleteTab({ domains }: { domains: string[] }) {
                       }} />
                     </td>
                     <td className="p-2 font-mono">{m.domain}</td>
-                    <td className="p-2">{m.type}</td>
+                    <td className="p-2">{typeBadge(m.type)}</td>
                     <td className="p-2 font-mono text-xs">{m.name}</td>
                     <td className="max-w-xs truncate p-2 font-mono text-xs">{m.content}</td>
                   </tr>
@@ -948,8 +949,8 @@ function DeleteTab({ domains }: { domains: string[] }) {
           <AlertDialogHeader>
             <AlertDialogTitle>批量删除 {selected.size} 条 DNS 记录？</AlertDialogTitle>
             <AlertDialogDescription>
-              将从 {new Set(matches.filter((m) => selected.has(m.id)).map((m) => m.domain)).size} 个域名中删除
-              选中的 {selected.size} 条记录。删除立即生效且不可恢复，请确认已核对预览列表。
+              将删除 {selected.size} 条记录，此操作不可撤销。受影响域名数：
+              {new Set(matches.filter((m) => selected.has(m.id)).map((m) => m.domain)).size}。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1027,7 +1028,7 @@ function ResultTable({ results, kind }: { results: any[]; kind: "add" | "delete"
               return (
                 <tr key={i} className="border-t">
                   <td className="p-2 font-mono">{r.domain}</td>
-                  <td className="p-2">{r.type}</td>
+                  <td className="p-2">{typeBadge(r.type)}</td>
                   <td className="p-2 font-mono text-xs">{r.name}</td>
                   {kind === "add" && <td className="max-w-xs truncate p-2 font-mono text-xs">{r.content}</td>}
                   <td className="p-2">
@@ -1049,25 +1050,35 @@ function ResultTable({ results, kind }: { results: any[]; kind: "add" | "delete"
 }
 
 function NoDomains({ compact = false }: { compact?: boolean }) {
-  if (compact) {
-    return (
-      <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-        尚未选择域名。请先到{" "}
-        <Link to="/domains" className="text-primary underline">
-          域名列表
-        </Link>{" "}
-        选中要处理的域名，或在上方手动输入一个 Cloudflare Zone。
-      </div>
-    );
-  }
-
   return (
-    <Card className="p-6 text-center">
-      尚未选择域名。请先到{" "}
-      <Link to="/domains" className="text-primary underline">
-        域名列表
-      </Link>{" "}
-      选中要处理的域名，或在上方手动输入一个 Cloudflare Zone。
-    </Card>
+    <EmptyState
+      compact={compact}
+      icon={<Link2 className="size-5" />}
+      title="请选择域名"
+      description="请选择一个已绑定 Cloudflare 的域名 Zone"
+      primaryAction={{
+        label: "选择域名",
+        href: "/domains",
+        icon: <Link2 className="mr-2 size-4" />,
+      }}
+    />
+  );
+}
+
+function typeBadge(type: string) {
+  const cls: Record<string, string> = {
+    A: "border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-300",
+    AAAA: "border-purple-500/40 bg-purple-500/10 text-purple-600 dark:text-purple-300",
+    CNAME: "border-cyan-500/40 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300",
+    MX: "border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-300",
+    TXT: "border-border/60 bg-muted/70 text-muted-foreground",
+    NS: "border-primary/40 bg-primary/10 text-primary",
+    SRV: "border-pink-500/40 bg-pink-500/10 text-pink-600 dark:text-pink-300",
+    CAA: "border-yellow-500/40 bg-yellow-500/10 text-yellow-700 dark:text-yellow-300",
+  };
+  return (
+    <Badge variant="outline" className={cls[type] ?? "border-border/60 bg-muted/70"}>
+      {type}
+    </Badge>
   );
 }

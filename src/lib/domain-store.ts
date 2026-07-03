@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 // Simple cross-page store for the working domain set. Client-only.
 const KEY = "domainops.selected";
 
 const listeners = new Set<() => void>();
-const EMPTY: string[] = [];
-let memoryDomains: string[] = EMPTY;
+const EMPTY = Object.freeze([]) as readonly string[];
+let memoryDomains: readonly string[] = EMPTY;
 
 // 缓存快照：只有当 localStorage 原始字符串变化时才返回新数组引用，否则返回同一引用。
 // 否则 useSyncExternalStore 每次渲染都拿到新数组 → 判定 store 变化 → 无限重渲染（React #185）。
 let cachedRaw: string | null = null;
-let cachedDomains: string[] = EMPTY;
+let cachedDomains: readonly string[] = EMPTY;
 
 function getStorage(): Storage | null {
   if (typeof window === "undefined") return null;
@@ -21,7 +21,12 @@ function getStorage(): Storage | null {
   }
 }
 
-function getSnapshot(): string[] {
+function normalizeDomains(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) return EMPTY;
+  return Object.freeze(value.map(String).filter(Boolean));
+}
+
+function getSnapshot(): readonly string[] {
   if (typeof window === "undefined") return EMPTY;
   const storage = getStorage();
   if (!storage) return memoryDomains;
@@ -29,15 +34,23 @@ function getSnapshot(): string[] {
   if (raw === cachedRaw) return cachedDomains;
   cachedRaw = raw;
   try {
-    cachedDomains = raw ? (JSON.parse(raw).domains ?? EMPTY) : EMPTY;
+    cachedDomains = raw ? normalizeDomains(JSON.parse(raw).domains) : EMPTY;
   } catch {
     cachedDomains = EMPTY;
   }
   return cachedDomains;
 }
 
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
 export function setDomains(domains: string[]) {
-  memoryDomains = domains;
+  memoryDomains = Object.freeze([...domains]);
+  cachedRaw = null;
   const storage = getStorage();
   if (storage) {
     storage.setItem(KEY, JSON.stringify({ domains }));
@@ -46,16 +59,5 @@ export function setDomains(domains: string[]) {
 }
 
 export function useDomains(): string[] {
-  const [domains, setDomainsState] = useState<string[]>(EMPTY);
-
-  useEffect(() => {
-    const update = () => setDomainsState(getSnapshot());
-    update();
-    listeners.add(update);
-    return () => {
-      listeners.delete(update);
-    };
-  }, []);
-
-  return domains;
+  return useSyncExternalStore(subscribe, getSnapshot, () => EMPTY) as string[];
 }

@@ -11,23 +11,23 @@ import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider, themeInitScript } from "@/components/theme-provider";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">页面不存在</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+          你访问的页面不存在，或已经被移动。
         </p>
         <div className="mt-6">
           <Link
             to="/"
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Go home
+            返回首页
           </Link>
         </div>
       </div>
@@ -43,10 +43,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          页面载入失败
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          服务器返回了异常。你可以重试，或返回首页。
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -56,13 +56,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            重试
           </button>
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
+            返回首页
           </a>
         </div>
       </div>
@@ -75,22 +75,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "DS Hunter · 域名资产管理系统" },
+      { title: "dshunter · 批量域名管理" },
       {
         name: "description",
-        content: "DS Hunter 集中同步、管理、监控域名资产，统一处理注册商与 DNS 工作流。",
+        content: "批量将域名接入 Cloudflare，通过注册商 API 或粘贴导入，一键管理 DNS 解析记录。",
       },
-      { property: "og:title", content: "DS Hunter · 域名资产管理系统" },
+      { property: "og:title", content: "dshunter · 批量域名管理" },
       {
         property: "og:description",
-        content: "集中同步、管理、监控域名资产，统一处理注册商与 DNS 工作流。",
+        content: "批量将域名接入 Cloudflare，通过注册商 API 或粘贴导入，一键管理 DNS 解析记录。",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "DS Hunter · 域名资产管理系统" },
+      { name: "twitter:title", content: "dshunter · 批量域名管理" },
       {
         name: "twitter:description",
-        content: "集中同步、管理、监控域名资产，统一处理注册商与 DNS 工作流。",
+        content: "批量将域名接入 Cloudflare，通过注册商 API 或粘贴导入，一键管理 DNS 解析记录。",
       },
     ],
     links: [
@@ -111,6 +111,7 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="zh" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <HeadContent />
       </head>
       <body>

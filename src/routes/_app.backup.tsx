@@ -14,14 +14,9 @@ import { useDomains } from "@/lib/domain-store";
 import { downloadBlob, toCsv } from "@/lib/csv";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Download, Upload, GitCompare, RotateCcw, ListChecks, Play } from "lucide-react";
@@ -47,9 +42,16 @@ function BackupPage() {
       </div>
 
       {domains.length === 0 ? (
-        <Card className="p-6 text-center text-muted-foreground">
-          请先到域名列表选中要处理的域名。
-        </Card>
+        <EmptyState
+          icon={<Download className="size-5" />}
+          title="请选择要备份的 Zone"
+          description="导出当前 Zone 的所有 DNS 记录到 JSON/CSV"
+          primaryAction={{
+            label: "选择要导出的 Zone",
+            href: "/domains",
+            icon: <Download className="mr-2 size-4" />,
+          }}
+        />
       ) : (
         <Tabs defaultValue="export">
           <TabsList>
@@ -213,13 +215,13 @@ function DiffCol({ title, color, items }: { title: string; color: string; items:
       <div className={`font-semibold mb-1 ${color}`}>
         {title} ({items.length})
       </div>
-      <ul className="border rounded max-h-60 overflow-auto text-xs font-mono p-2 space-y-1 bg-muted/30">
+      <pre className="max-h-60 overflow-auto rounded-lg border border-border/60 bg-muted/30 p-2 text-xs">
         {items.length === 0 ? (
-          <li className="text-muted-foreground">—</li>
+          <span className="text-muted-foreground">--</span>
         ) : (
-          items.map((s, i) => <li key={i}>{s}</li>)
+          items.map((s) => s).join("\n")
         )}
-      </ul>
+      </pre>
     </div>
   );
 }
@@ -299,26 +301,32 @@ function RestoreTab() {
           {backup && <Badge variant="secondary">{backup.length} zones 待恢复</Badge>}
         </div>
         <div>
-          <div className="text-sm mb-1">恢复策略</div>
-          <Select
+          <div className="mb-2 text-sm font-medium">恢复策略</div>
+          <RadioGroup
             value={strategy}
             onValueChange={(v) => {
               setStrategy(v as RestoreStrategy);
               setPlans(null);
               setApplied(null);
             }}
+            className="grid gap-2 md:grid-cols-3"
           >
-            <SelectTrigger className="max-w-md">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="add-missing">仅补齐缺失（线上已有则跳过）</SelectItem>
-              <SelectItem value="overwrite">覆盖已存在（同 key 强制更新 ttl/proxied）</SelectItem>
-              <SelectItem value="replace-all">
-                完全替换（先删除备份中不存在的记录，再写入）⚠
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            <StrategyCard
+              value="add-missing"
+              title="仅补齐"
+              description="只创建线上缺失的记录，线上已有记录保持不变。"
+            />
+            <StrategyCard
+              value="overwrite"
+              title="覆盖属性"
+              description="同 key 记录会按备份更新 ttl、proxied 与 priority。"
+            />
+            <StrategyCard
+              value="replace-all"
+              title="完全替换"
+              description="先删除备份中不存在的记录，再写入备份内容。"
+            />
+          </RadioGroup>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button onClick={() => planMut.mutate()} disabled={!backup || planMut.isPending}>
@@ -474,8 +482,8 @@ function RestoreTab() {
 
 function OpBadge({ op }: { op: "create" | "update" | "delete" | "skip" }) {
   const map: Record<string, { label: string; cls: string }> = {
-    create: { label: "创建", cls: "bg-green-600 hover:bg-green-600 text-white" },
-    update: { label: "更新", cls: "bg-blue-600 hover:bg-blue-600 text-white" },
+    create: { label: "创建", cls: "bg-green-500/15 text-green-700 dark:text-green-300" },
+    update: { label: "更新", cls: "bg-blue-500/15 text-blue-700 dark:text-blue-300" },
     delete: { label: "删除", cls: "bg-destructive text-destructive-foreground" },
     skip: { label: "跳过", cls: "bg-muted text-muted-foreground" },
   };
@@ -484,5 +492,25 @@ function OpBadge({ op }: { op: "create" | "update" | "delete" | "skip" }) {
     <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${cls}`}>
       {label}
     </span>
+  );
+}
+
+function StrategyCard({
+  value,
+  title,
+  description,
+}: {
+  value: RestoreStrategy;
+  title: string;
+  description: string;
+}) {
+  return (
+    <label className="flex cursor-pointer gap-3 rounded-lg border border-border/60 bg-card/60 p-3 text-sm">
+      <RadioGroupItem value={value} className="mt-0.5" />
+      <span>
+        <span className="block font-medium">{title}</span>
+        <span className="mt-1 block text-xs leading-5 text-muted-foreground">{description}</span>
+      </span>
+    </label>
   );
 }

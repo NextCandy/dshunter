@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { EmptyState } from "@/components/empty-state";
 import {
   Select,
   SelectContent,
@@ -420,19 +421,17 @@ function DomainSetEditor({ domains, disabled }: { domains: string[]; disabled: b
 
       <div className="min-h-0 flex-1 overflow-auto p-3">
         {domains.length === 0 ? (
-          <div className="flex h-full min-h-40 flex-col items-center justify-center text-center">
-            <Globe2 className="mb-3 size-8 text-muted-foreground" />
-            <div className="text-sm font-medium">还没有目标域名</div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              在上方输入框粘贴域名，或到域名列表勾选后保存。
-            </div>
-            <Button asChild variant="outline" size="sm" className="mt-3">
-              <Link to="/domains">
-                <Globe2 className="mr-1 size-3.5" />
-                去域名列表选择
-              </Link>
-            </Button>
-          </div>
+          <EmptyState
+            compact
+            icon={<Globe2 className="size-5" />}
+            title="还没有目标域名"
+            description="先在域名管理选中要绑定的域名"
+            primaryAction={{
+              label: "跳转到域名管理",
+              href: "/domains",
+              icon: <Globe2 className="mr-2 size-4" />,
+            }}
+          />
         ) : visible.length === 0 ? (
           <div className="py-8 text-center text-sm text-muted-foreground">
             没有匹配「{filter}」的域名

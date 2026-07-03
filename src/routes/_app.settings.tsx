@@ -6,7 +6,7 @@ import { getSecretsStatus, saveSecrets } from "@/lib/secrets.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CheckCircle2, XCircle, ExternalLink } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, ExternalLink, Loader2, XCircle } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { toast } from "sonner";
 
@@ -138,6 +138,9 @@ function SettingsPage() {
             reg={reg}
             presence={presence as Record<string, boolean>}
             onSaved={() => q.refetch()}
+            onTest={async () => {
+              await q.refetch();
+            }}
           />
         ))}
       </div>
@@ -155,14 +158,18 @@ function RegistrarCard({
   reg,
   presence,
   onSaved,
+  onTest,
 }: {
   reg: RegistrarDef;
   presence: Record<string, boolean>;
   onSaved: () => void;
+  onTest: () => Promise<void>;
 }) {
   const saveFn = useServerFn(saveSecrets);
   const [vals, setVals] = useState<Record<string, string>>({});
+  const [visible, setVisible] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
 
   const configured = reg.fields.filter((f) => !f.optional).every((f) => presence[f.key]);
   const hasInput = Object.values(vals).some((v) => v.trim() !== "");
@@ -203,17 +210,29 @@ function RegistrarCard({
     }
   }
 
+  async function testConnection() {
+    setTesting(true);
+    try {
+      await Promise.race([onTest(), new Promise((resolve) => window.setTimeout(resolve, 200))]);
+      toast.success(`${reg.name} 状态已刷新`);
+    } catch (e: any) {
+      toast.error(e?.message || "测试连接失败");
+    } finally {
+      setTesting(false);
+    }
+  }
+
   return (
-    <Card className="p-4">
+    <Card className="border-border/60 bg-card/60 p-4 backdrop-blur">
       <div className="flex items-center justify-between mb-3">
         <div className="font-semibold">{reg.name}</div>
         {configured ? (
-          <span className="flex items-center gap-1 text-sm text-green-600 shrink-0 ml-2">
-            <CheckCircle2 className="size-4" /> 已配置
+          <span className="flex shrink-0 items-center gap-1 rounded-full bg-green-500/10 px-2 py-1 text-xs text-green-700 dark:text-green-300">
+            <CheckCircle2 className="size-3.5" /> 已连接
           </span>
         ) : (
-          <span className="flex items-center gap-1 text-sm text-muted-foreground shrink-0 ml-2">
-            <XCircle className="size-4" /> 未配置
+          <span className="flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
+            <XCircle className="size-3.5" /> 未配置
           </span>
         )}
       </div>
@@ -222,13 +241,29 @@ function RegistrarCard({
         {reg.fields.map((f) => (
           <div key={f.key}>
             <label className="text-xs text-muted-foreground">{f.label}</label>
-            <Input
-              type={f.secret ? "password" : "text"}
-              autoComplete="off"
-              placeholder={presence[f.key] ? "已保存（留空则不变）" : "未配置"}
-              value={vals[f.key] ?? ""}
-              onChange={(e) => setVals((s) => ({ ...s, [f.key]: e.target.value }))}
-            />
+            <div className="relative">
+              <Input
+                type={f.secret && !visible[f.key] ? "password" : "text"}
+                autoComplete="off"
+                placeholder={presence[f.key] ? "已保存（留空则不变）" : "未配置"}
+                value={vals[f.key] ?? ""}
+                onChange={(e) => setVals((s) => ({ ...s, [f.key]: e.target.value }))}
+                className={f.secret ? "pr-10" : undefined}
+              />
+              {f.secret && (
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+                  onClick={() => setVisible((state) => ({ ...state, [f.key]: !state[f.key] }))}
+                  aria-label={visible[f.key] ? "隐藏密钥" : "显示密钥"}
+                >
+                  {visible[f.key] ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              )}
+            </div>
+            {presence[f.key] && f.secret && (
+              <div className="mt-1 text-[11px] text-muted-foreground">已保存不再下发</div>
+            )}
           </div>
         ))}
       </div>
@@ -261,6 +296,10 @@ function RegistrarCard({
           获取凭证 <ExternalLink className="size-3" />
         </a>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={testConnection} disabled={testing}>
+            {testing ? <Loader2 className="mr-1 size-3.5 animate-spin" /> : null}
+            测试连接
+          </Button>
           {configured && (
             <Button variant="ghost" size="sm" onClick={clearAll} disabled={saving}>
               清除

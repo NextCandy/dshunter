@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { getTokenStatus } from "@/lib/registrars.functions";
 import { getCfHealth } from "@/lib/cloudflare.functions";
 import { useDomains } from "@/lib/domain-store";
+import { formatDateTime } from "@/lib/date-format";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,6 @@ const SOURCES: { key: string; label: string }[] = [
 ];
 
 type LastPull = { source: string; count: number; cloudflareCount: number; at: string };
-type TokenStatus = Record<string, boolean | undefined>;
 
 function Dashboard() {
   const tokenFn = useServerFn(getTokenStatus);
@@ -51,15 +51,17 @@ function Dashboard() {
   const [lastPull, setLastPull] = useState<LastPull | null>(null);
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("dshunter.lastPull");
+      const raw = localStorage.getItem("domainops.lastPull");
       if (raw) setLastPull(JSON.parse(raw));
     } catch {
       // 忽略损坏的缓存
     }
   }, []);
 
-  const tokenData = tokens.data as TokenStatus | undefined;
-  const configuredCount = tokenData ? SOURCES.filter((s) => tokenData[s.key]).length : null;
+  const configuredCount = tokens.data
+    ? SOURCES.filter((s) => (tokens.data as any)[s.key]).length
+    : null;
+  const estimatedValue = "--";
 
   return (
     <div className="max-w-6xl">
@@ -101,12 +103,19 @@ function Dashboard() {
           to="/records"
         />
         <StatCard
+          icon={<ShieldCheck className="size-4" />}
+          label="估算价值"
+          value={estimatedValue}
+          sub="未接入 renewalPrice 时不展示假增量"
+          to="/domains"
+        />
+        <StatCard
           icon={<Clock3 className="size-4" />}
           label="最近拉取"
           value={lastPull ? `${lastPull.count} 个` : "—"}
           sub={
             lastPull
-              ? `${lastPull.source} · ${new Date(lastPull.at).toLocaleString()}`
+              ? `${lastPull.source} · ${formatDateTime(lastPull.at)}`
               : "还没有拉取记录"
           }
           to="/domains"
@@ -150,7 +159,9 @@ function Dashboard() {
             </Button>
           )}
         </div>
-        {health.data?.error && <p className="mt-2 text-xs text-destructive">{health.data.error}</p>}
+        {health.data?.error && (
+          <p className="mt-2 text-xs text-destructive">{health.data.error}</p>
+        )}
         {health.error && (
           <p className="mt-2 text-xs text-destructive">{(health.error as Error).message}</p>
         )}
@@ -166,7 +177,7 @@ function Dashboard() {
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {SOURCES.map((s) => {
-            const ok = tokenData ? Boolean(tokenData[s.key]) : undefined;
+            const ok = tokens.data ? Boolean((tokens.data as any)[s.key]) : undefined;
             return (
               <div
                 key={s.key}
