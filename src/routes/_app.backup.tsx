@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import {
@@ -10,6 +10,12 @@ import {
   type BackupZone,
   type ZonePlan,
 } from "@/lib/backup.functions";
+import {
+  listOperationLogs,
+  type OperationLogCategory,
+  type OperationLogItem,
+  type OperationLogSeverity,
+} from "@/lib/operation-log.functions";
 import { useDomains } from "@/lib/domain-store";
 import { downloadBlob, toCsv } from "@/lib/csv";
 import { Card } from "@/components/ui/card";
@@ -18,8 +24,26 @@ import { EmptyState } from "@/components/empty-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
-import { Download, Upload, GitCompare, RotateCcw, ListChecks, Play } from "lucide-react";
+import {
+  Activity,
+  Clock,
+  Download,
+  Filter,
+  GitCompare,
+  ListChecks,
+  Play,
+  RefreshCw,
+  RotateCcw,
+  Upload,
+} from "lucide-react";
 
 type RestoreStrategy = "add-missing" | "overwrite" | "replace-all";
 
@@ -42,41 +66,47 @@ function BackupPage() {
         修改）。
       </div>
 
-      {domains.length === 0 ? (
-        <EmptyState
-          icon={<Download className="size-5" />}
-          title="请选择要备份的 Zone"
-          description="导出当前 Zone 的所有 DNS 记录到 JSON/CSV"
-          primaryAction={{
-            label: "选择要导出的 Zone",
-            href: "/domains",
-            icon: <Download className="mr-2 size-4" />,
-          }}
-        />
-      ) : (
-        <Tabs defaultValue="export">
-          <TabsList>
-            <TabsTrigger value="export">
-              <Download className="size-4 mr-1" /> 导入 / 导出
-            </TabsTrigger>
-            <TabsTrigger value="diff">
-              <GitCompare className="size-4 mr-1" /> 差异对比
-            </TabsTrigger>
-            <TabsTrigger value="restore">
-              <RotateCcw className="size-4 mr-1" /> 恢复
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="export">
+      <Tabs defaultValue={domains.length === 0 ? "logs" : "export"}>
+        <TabsList className="h-auto flex-wrap justify-start">
+          <TabsTrigger value="export">
+            <Download className="size-4 mr-1" /> 导入 / 导出
+          </TabsTrigger>
+          <TabsTrigger value="diff">
+            <GitCompare className="size-4 mr-1" /> 差异对比
+          </TabsTrigger>
+          <TabsTrigger value="restore">
+            <RotateCcw className="size-4 mr-1" /> 恢复
+          </TabsTrigger>
+          <TabsTrigger value="logs">
+            <Activity className="size-4 mr-1" /> 操作日志
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="export">
+          {domains.length === 0 ? (
+            <EmptyState
+              icon={<Download className="size-5" />}
+              title="请选择要备份的 Zone"
+              description="导出当前 Zone 的所有 DNS 记录到 JSON/CSV。操作日志仍可在本页查看。"
+              primaryAction={{
+                label: "选择要导出的 Zone",
+                href: "/domains",
+                icon: <Download className="mr-2 size-4" />,
+              }}
+            />
+          ) : (
             <ExportTab domains={domains} />
-          </TabsContent>
-          <TabsContent value="diff">
-            <DiffTab />
-          </TabsContent>
-          <TabsContent value="restore">
-            <RestoreTab />
-          </TabsContent>
-        </Tabs>
-      )}
+          )}
+        </TabsContent>
+        <TabsContent value="diff">
+          <DiffTab />
+        </TabsContent>
+        <TabsContent value="restore">
+          <RestoreTab />
+        </TabsContent>
+        <TabsContent value="logs">
+          <OperationLogTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -121,6 +151,197 @@ function ExportTab({ domains }: { domains: string[] }) {
       </div>
     </Card>
   );
+}
+
+const LOG_CATEGORY_OPTIONS: { value: OperationLogCategory | "all"; label: string }[] = [
+  { value: "all", label: "全部类型" },
+  { value: "settings", label: "站点设置" },
+  { value: "registrar", label: "注册商" },
+  { value: "domains", label: "域名" },
+  { value: "backup", label: "备份恢复" },
+  { value: "dns", label: "DNS" },
+  { value: "sync", label: "同步" },
+  { value: "system", label: "系统" },
+];
+
+const LOG_CATEGORY_LABEL: Record<OperationLogCategory, string> = {
+  settings: "站点设置",
+  registrar: "注册商",
+  domains: "域名",
+  backup: "备份恢复",
+  dns: "DNS",
+  sync: "同步",
+  system: "系统",
+};
+
+const LOG_SEVERITY_LABEL: Record<OperationLogSeverity, string> = {
+  info: "信息",
+  success: "成功",
+  warning: "注意",
+  danger: "风险",
+};
+
+function OperationLogTab() {
+  const fn = useServerFn(listOperationLogs);
+  const [category, setCategory] = useState<OperationLogCategory | "all">("all");
+  const logs = useQuery({
+    queryKey: ["operation-logs", category],
+    queryFn: () => fn({ data: { category, limit: 120 } }),
+    refetchInterval: 30_000,
+  });
+  const rows = logs.data?.rows ?? [];
+  const warningCount = rows.filter(
+    (row) => row.severity === "warning" || row.severity === "danger",
+  ).length;
+  const categoryCount = new Set(rows.map((row) => row.category)).size;
+  const latest = rows[0]?.at;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-3">
+        <LogMetricCard label="已载入记录" value={String(rows.length)} />
+        <LogMetricCard label="涉及类型" value={String(categoryCount)} />
+        <LogMetricCard label="需关注记录" value={String(warningCount)} />
+      </div>
+
+      <Card className="p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="flex items-center gap-2 font-semibold">
+              <Activity className="size-4 text-primary" />
+              操作审计轨迹
+            </div>
+            <div className="mt-1 text-sm text-muted-foreground">
+              记录后台关键写入动作，不包含密钥、Token、Cookie 或表单敏感内容。
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Select
+              value={category}
+              onValueChange={(value) => setCategory(value as OperationLogCategory | "all")}
+            >
+              <SelectTrigger className="w-full sm:w-40">
+                <Filter className="mr-2 size-4 opacity-70" />
+                <SelectValue placeholder="筛选类型" />
+              </SelectTrigger>
+              <SelectContent>
+                {LOG_CATEGORY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => logs.refetch()}
+              disabled={logs.isFetching}
+            >
+              <RefreshCw className={`mr-2 size-4 ${logs.isFetching ? "animate-spin" : ""}`} />
+              刷新
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {logs.isLoading ? (
+        <Card className="p-4 text-sm text-muted-foreground">正在读取操作日志...</Card>
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon={<Clock className="size-5" />}
+          title="暂无操作日志"
+          description="后续保存设置、调整注册商、修改手动域名或应用恢复计划后会自动记录。"
+        />
+      ) : (
+        <div className="space-y-2">
+          {rows.map((row) => (
+            <OperationLogRow key={row.id} row={row} />
+          ))}
+        </div>
+      )}
+
+      {latest && (
+        <div className="text-xs text-muted-foreground">最近记录时间：{formatLogTime(latest)}</div>
+      )}
+    </div>
+  );
+}
+
+function LogMetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <Card className="p-4">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-1 font-display text-2xl font-bold">{value}</div>
+    </Card>
+  );
+}
+
+function OperationLogRow({ row }: { row: OperationLogItem }) {
+  const metadataEntries = row.metadata ? Object.entries(row.metadata).slice(0, 6) : [];
+  return (
+    <Card className="p-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">{LOG_CATEGORY_LABEL[row.category]}</Badge>
+            <SeverityBadge severity={row.severity} />
+            <span className="font-semibold">{row.title}</span>
+          </div>
+          {row.detail && <div className="mt-2 text-sm text-muted-foreground">{row.detail}</div>}
+          {metadataEntries.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {metadataEntries.map(([key, value]) => (
+                <span
+                  key={key}
+                  className="rounded-md border border-border/60 bg-muted/30 px-2 py-1 text-xs text-muted-foreground"
+                >
+                  <span className="font-medium text-foreground">{key}</span>:{" "}
+                  {formatLogValue(value)}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="shrink-0 text-xs text-muted-foreground md:text-right">
+          <div>{formatLogTime(row.at)}</div>
+          <div className="mt-1 font-mono">{row.action}</div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function SeverityBadge({ severity }: { severity: OperationLogSeverity }) {
+  const cls: Record<OperationLogSeverity, string> = {
+    info: "border-border text-muted-foreground",
+    success: "border-success/40 bg-success/10 text-success",
+    warning: "border-warning/40 bg-warning/10 text-warning",
+    danger: "border-destructive/40 bg-destructive/10 text-destructive",
+  };
+  return (
+    <Badge variant="outline" className={cls[severity]}>
+      {LOG_SEVERITY_LABEL[severity]}
+    </Badge>
+  );
+}
+
+function formatLogTime(value: string) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return value;
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatLogValue(value: unknown): string {
+  if (Array.isArray(value)) return value.map(formatLogValue).join(", ");
+  if (value && typeof value === "object") return JSON.stringify(value);
+  if (typeof value === "boolean") return value ? "是" : "否";
+  return String(value ?? "-");
 }
 
 function BackupFileInput({ onLoad }: { onLoad: (zones: BackupZone[]) => void }) {

@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireGate } from "./auth-middleware";
+import { recordOperationLog } from "./operation-log.server";
+import type { CFResp } from "./registrars/cloudflare.server";
 
 export type BackupRecord = {
   type: string;
@@ -16,7 +18,20 @@ export type BackupZone = {
   records: BackupRecord[];
 };
 
-function normRec(r: any): BackupRecord {
+type CloudflareDnsRecord = BackupRecord & {
+  id: string;
+};
+
+type DnsRecordPayload = {
+  type: string;
+  name: string;
+  content: string;
+  ttl: number;
+  proxied?: boolean;
+  priority?: number;
+};
+
+function normRec(r: Record<string, unknown>): BackupRecord {
   return {
     type: String(r.type),
     name: String(r.name),
@@ -83,7 +98,11 @@ export const diffAgainstLive = createServerFn({ method: "POST" })
       for (const [k, br] of bMap) {
         const lr = lMap.get(k);
         if (!lr) continue;
-        if (br.ttl !== lr.ttl || br.proxied !== lr.proxied || (br.priority ?? -1) !== (lr.priority ?? -1)) {
+        if (
+          br.ttl !== lr.ttl ||
+          br.proxied !== lr.proxied ||
+          (br.priority ?? -1) !== (lr.priority ?? -1)
+        ) {
           changed.push({ key: k, backup: br, live: lr });
         }
       }
@@ -110,10 +129,7 @@ export type ZonePlan = {
 export const planRestoreFromBackup = createServerFn({ method: "POST" })
   .middleware([requireGate])
   .inputValidator(
-    (d: {
-      backup: BackupZone[];
-      strategy: "add-missing" | "overwrite" | "replace-all";
-    }) => d,
+    (d: { backup: BackupZone[]; strategy: "add-missing" | "overwrite" | "replace-all" }) => d,
   )
   .handler(async ({ data }): Promise<{ plans: ZonePlan[] }> => {
     const cf = await import("./registrars/cloudflare.server");
@@ -131,7 +147,7 @@ export const planRestoreFromBackup = createServerFn({ method: "POST" })
         });
         continue;
       }
-      const live = (await cf.cfListDNS(z.id)) as any[];
+      const live = (await cf.cfListDNS(z.id)) as CloudflareDnsRecord[];
       const liveByKey = new Map(live.map((r) => [keyOf(normRec(r)), r]));
       const backupKeys = new Set(b.records.map(keyOf));
       const ops: PlanOp[] = [];
@@ -211,10 +227,10 @@ export const applyRestorePlan = createServerFn({ method: "POST" })
           if (op.op === "delete") {
             const r = await cf.cfDeleteDNS(zoneId, op.recordId);
             if (r.success) row.deleted++;
-            else row.errors.push(`delete ${op.record.name}: ${cf.cfErr(r as any)}`);
+            else row.errors.push(`delete ${op.record.name}: ${cf.cfErr(r as CFResp<unknown>)}`);
             continue;
           }
-          const payload: any = {
+          const payload: DnsRecordPayload = {
             type: op.record.type,
             name: op.record.name,
             content: op.record.content,
@@ -231,12 +247,30 @@ export const applyRestorePlan = createServerFn({ method: "POST" })
             if (r.success) row.updated++;
             else row.errors.push(`update ${op.record.name}: ${cf.cfErr(r)}`);
           }
-        } catch (e: any) {
-          row.errors.push(`${op.record.name}: ${e.message}`);
+        } catch (e: unknown) {
+          row.errors.push(`${op.record.name}: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
       out.push(row);
     }
+    const totals = out.reduce(
+      (sum, row) => ({
+        created: sum.created + row.created,
+        updated: sum.updated + row.updated,
+        deleted: sum.deleted + row.deleted,
+        skipped: sum.skipped + row.skipped,
+        errors: sum.errors + row.errors.length,
+      }),
+      { created: 0, updated: 0, deleted: 0, skipped: 0, errors: 0 },
+    );
+    await recordOperationLog({
+      category: "backup",
+      action: "dns_restore.apply",
+      title: "应用 DNS 恢复计划",
+      detail: `${out.length} 个 Zone，创建 ${totals.created}，更新 ${totals.updated}，删除 ${totals.deleted}，错误 ${totals.errors}。`,
+      entityType: "dns-restore",
+      severity: totals.errors > 0 ? "warning" : "success",
+      metadata: totals,
+    });
     return { results: out };
   });
-
