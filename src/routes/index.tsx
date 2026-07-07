@@ -8,8 +8,10 @@ import { DeckMark } from "@/components/deck-mark";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import { listPublicDomainAssets } from "@/lib/public.functions";
+import { getSiteSettings } from "@/lib/site-settings.functions";
 import { formatDate } from "@/lib/date-format";
 import { LockKeyhole, Search, Sun, Moon } from "lucide-react";
+import type { SiteSettings } from "@/lib/site-settings.server";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -43,14 +45,27 @@ type PublicDomain = {
 
 function PublicHome() {
   const listFn = useServerFn(listPublicDomainAssets);
+  const siteSettingsFn = useServerFn(getSiteSettings);
   const q = useQuery({ queryKey: ["public-domain-assets"], queryFn: () => listFn() });
+  const settingsQuery = useQuery({
+    queryKey: ["site-settings"],
+    queryFn: () => siteSettingsFn(),
+    staleTime: 60_000,
+  });
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
+  const settings = settingsQuery.data?.settings ?? DEFAULT_PUBLIC_SETTINGS;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebounced(search.trim().toLowerCase()), 300);
     return () => window.clearTimeout(timer);
   }, [search]);
+
+  useEffect(() => {
+    document.title = titleForSettings(settings);
+    setMeta("description", settings.seoDescription || settings.siteDescription);
+    setFavicon(settings.faviconUrl);
+  }, [settings]);
 
   const rows = (q.data?.rows ?? []) as PublicDomain[];
   const loading = q.isLoading;
@@ -59,10 +74,28 @@ function PublicHome() {
   const visible = rows.filter((row) => !debounced || row.domain.includes(debounced));
 
   const stats: Readout[] = [
-    { label: "域名总数", value: rows.length, unit: "个", dot: "signal-primary", text: "text-primary" },
-    { label: "覆盖注册商", value: registrars.size, unit: "家", dot: "signal-muted", text: "text-foreground" },
+    {
+      label: "域名总数",
+      value: rows.length,
+      unit: "个",
+      dot: "signal-primary",
+      text: "text-primary",
+    },
+    {
+      label: "覆盖注册商",
+      value: registrars.size,
+      unit: "家",
+      dot: "signal-muted",
+      text: "text-foreground",
+    },
     { label: "已接入 CF", value: cfCount, unit: "个", dot: "signal-success", text: "text-success" },
-    { label: "待接入", value: rows.length - cfCount, unit: "个", dot: "signal-warning", text: "text-warning" },
+    {
+      label: "待接入",
+      value: rows.length - cfCount,
+      unit: "个",
+      dot: "signal-warning",
+      text: "text-warning",
+    },
   ];
 
   return (
@@ -76,14 +109,14 @@ function PublicHome() {
           <header className="flex items-center justify-between py-4">
             <Link to="/" className="flex items-center gap-2.5">
               <span className="grid size-9 place-items-center rounded-xl bg-primary/12 text-primary ring-1 ring-inset ring-primary/25">
-                <DeckMark className="size-5" />
+                <BrandIcon logoUrl={settings.logoUrl} className="size-5" />
               </span>
               <span>
                 <span className="block font-display text-[15px] font-bold leading-none tracking-tight">
-                  DS Hunter
+                  {settings.siteName}
                 </span>
                 <span className="mt-1 block font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                  Command Deck
+                  {settings.shortDescription}
                 </span>
               </span>
             </Link>
@@ -104,11 +137,16 @@ function PublicHome() {
               Domain Asset Registry
             </div>
             <h1 className="mt-5 max-w-2xl font-display text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl md:text-6xl">
-              看得见的域名资产
+              {settings.siteName}
             </h1>
             <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">
-              把分散在 Cloudflare、Spaceship、Dynadot、Porkbun 等平台的域名，收束成一张可检索、可核对的资产台账。
+              {settings.heroDescription || settings.siteDescription}
             </p>
+            {settings.announcement && (
+              <div className="mt-5 max-w-xl rounded-lg border border-primary/25 bg-primary/8 px-4 py-3 text-sm text-primary">
+                {settings.announcement}
+              </div>
+            )}
 
             <div className="mt-10 grid max-w-3xl grid-cols-2 gap-px overflow-hidden rounded-xl border border-border/60 bg-border/60 sm:grid-cols-4">
               {stats.map((s) => (
@@ -222,15 +260,132 @@ function PublicHome() {
 
       {/* ---------- 页脚 ---------- */}
       <footer className="border-t border-border/60">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <DeckMark className="size-4" />
-            <span className="font-mono text-xs">dshunter · command deck</span>
+        <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 text-xs text-muted-foreground sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <BrandIcon logoUrl={settings.logoUrl} className="size-4" />
+              <span className="font-mono">{settings.siteName}</span>
+            </div>
+            <span>{settings.footerText || settings.siteDescription}</span>
           </div>
-          <span className="text-xs text-muted-foreground">单用户域名资产与 DNS 运维控制台</span>
+          <FooterSettings settings={settings} />
         </div>
       </footer>
     </main>
+  );
+}
+
+const DEFAULT_PUBLIC_SETTINGS: SiteSettings = {
+  siteName: "DS Hunter",
+  siteDescription: "专业的域名展示、筛选与管理工具",
+  shortDescription: "域名展示与筛选工具",
+  heroDescription: "集中展示、筛选和管理你的域名项目。",
+  logoUrl: "",
+  faviconUrl: "",
+  contactEmail: "",
+  contactText: "",
+  contactWechat: "",
+  contactTelegram: "",
+  contactQQ: "",
+  icpNumber: "",
+  policeRecordNumber: "",
+  footerText: "",
+  showIcp: false,
+  showPoliceRecord: false,
+  showFooterText: true,
+  seoTitle: "DS Hunter",
+  seoDescription: "DS Hunter - 域名展示、筛选与管理工具",
+  copyrightOwner: "DS Hunter",
+  copyrightYear: String(new Date().getFullYear()),
+  announcement: "",
+  socialLinks: [],
+};
+
+function setMeta(name: string, content: string) {
+  if (!content) return;
+  let el = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
+  if (!el) {
+    el = document.createElement("meta");
+    el.name = name;
+    document.head.appendChild(el);
+  }
+  el.content = content;
+}
+
+function titleForSettings(settings: SiteSettings) {
+  const customTitle = settings.seoTitle.trim();
+  return customTitle && customTitle !== DEFAULT_PUBLIC_SETTINGS.seoTitle
+    ? customTitle
+    : settings.siteName;
+}
+
+function setFavicon(href: string) {
+  if (!href) return;
+  let link = document.querySelector<HTMLLinkElement>('link[rel="icon"][data-site-settings="true"]');
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "icon";
+    link.dataset.siteSettings = "true";
+    document.head.appendChild(link);
+  }
+  link.href = href;
+}
+
+function BrandIcon({ logoUrl, className }: { logoUrl: string; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [logoUrl]);
+  if (!logoUrl || failed) return <DeckMark className={className} />;
+  return (
+    <img
+      src={logoUrl}
+      alt=""
+      className={cn("rounded-sm object-contain", className)}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function FooterSettings({ settings }: { settings: SiteSettings }) {
+  const contacts = [
+    settings.contactEmail && (
+      <a key="email" href={`mailto:${settings.contactEmail}`} className="hover:text-foreground">
+        {settings.contactEmail}
+      </a>
+    ),
+    settings.contactText && <span key="text">{settings.contactText}</span>,
+    settings.contactWechat && <span key="wechat">微信：{settings.contactWechat}</span>,
+    settings.contactTelegram && <span key="telegram">Telegram：{settings.contactTelegram}</span>,
+    settings.contactQQ && <span key="qq">QQ：{settings.contactQQ}</span>,
+    ...settings.socialLinks.map((link) => (
+      <a
+        key={`${link.label}-${link.url}`}
+        href={link.url}
+        target="_blank"
+        rel="noreferrer"
+        className="hover:text-foreground"
+      >
+        {link.label}
+      </a>
+    )),
+  ].filter(Boolean);
+  const filings = [
+    settings.showIcp && settings.icpNumber && <span key="icp">{settings.icpNumber}</span>,
+    settings.showPoliceRecord && settings.policeRecordNumber && (
+      <span key="police">{settings.policeRecordNumber}</span>
+    ),
+  ].filter(Boolean);
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">{contacts}</div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {filings}
+        {settings.showFooterText && (
+          <span>
+            © {settings.copyrightYear} {settings.copyrightOwner}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 

@@ -6,9 +6,11 @@ import {
   useLocation,
   useRouter,
 } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { checkGate, lockSite } from "@/lib/gate.functions";
+import { getSiteSettings } from "@/lib/site-settings.functions";
 import { useDomains } from "@/lib/domain-store";
 import { useTheme } from "@/components/theme-provider";
 import { DeckMark } from "@/components/deck-mark";
@@ -46,19 +48,28 @@ const HEADINGS: { to: string; title: string; sub: string }[] = [
   { to: "/bind", title: "批量绑定", sub: "接入 Cloudflare" },
   { to: "/records", title: "解析记录", sub: "DNS 记录管理" },
   { to: "/backup", title: "备份与恢复", sub: "导出 · 差异 · 恢复" },
+  { to: "/site-settings", title: "站点设置", sub: "前台展示与联系信息" },
   { to: "/settings", title: "设置", sub: "凭证与偏好" },
 ];
 
 function AppLayout() {
   const router = useRouter();
   const lock = useServerFn(lockSite);
+  const getSettings = useServerFn(getSiteSettings);
+  const settingsQuery = useQuery({
+    queryKey: ["site-settings"],
+    queryFn: () => getSettings(),
+    staleTime: 60_000,
+  });
+  const siteName = settingsQuery.data?.settings.siteName || "DS Hunter";
+  const logoUrl = settingsQuery.data?.settings.logoUrl || "";
   const domains = useDomains();
   const notifications = buildNotifications(domains);
   const onLock = async () => {
     await lock();
     router.navigate({ to: "/unlock" });
   };
-  const nav = <SidebarNav onLock={onLock} />;
+  const nav = <SidebarNav onLock={onLock} siteName={siteName} logoUrl={logoUrl} />;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
@@ -80,9 +91,9 @@ function AppLayout() {
 
           <Link to="/dashboard" className="flex items-center gap-2 md:hidden">
             <span className="grid size-7 place-items-center rounded-lg bg-primary/12 text-primary ring-1 ring-inset ring-primary/25">
-              <DeckMark className="size-4" />
+              <AdminBrandIcon logoUrl={logoUrl} className="size-4" />
             </span>
-            <span className="font-display text-sm font-bold tracking-tight">DS Hunter</span>
+            <span className="font-display text-sm font-bold tracking-tight">{siteName}</span>
           </Link>
 
           <div className="hidden md:block">
@@ -190,16 +201,24 @@ function NotificationsBell({ notifications }: { notifications: NotificationItem[
   );
 }
 
-function SidebarNav({ onLock }: { onLock: () => void | Promise<void> }) {
+function SidebarNav({
+  onLock,
+  siteName,
+  logoUrl,
+}: {
+  onLock: () => void | Promise<void>;
+  siteName: string;
+  logoUrl: string;
+}) {
   return (
     <div className="flex h-full w-full flex-col gap-0.5 p-3">
       <Link to="/dashboard" className="mb-4 flex items-center gap-2.5 px-1.5 pt-1">
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary ring-1 ring-inset ring-primary/25">
-          <DeckMark className="size-5" />
+          <AdminBrandIcon logoUrl={logoUrl} className="size-5" />
         </span>
         <span className="min-w-0">
           <span className="block truncate font-display text-[15px] font-bold leading-none tracking-tight text-sidebar-foreground">
-            DS Hunter
+            {siteName}
           </span>
           <span className="mt-1 block truncate font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             Command Deck
@@ -228,6 +247,9 @@ function SidebarNav({ onLock }: { onLock: () => void | Promise<void> }) {
       <NavItem to="/backup" icon={<DatabaseBackup className="size-4" />}>
         备份与恢复
       </NavItem>
+      <NavItem to="/site-settings" icon={<Settings className="size-4" />}>
+        站点设置
+      </NavItem>
       <NavItem to="/settings" icon={<Settings className="size-4" />}>
         设置
       </NavItem>
@@ -245,6 +267,13 @@ function SidebarNav({ onLock }: { onLock: () => void | Promise<void> }) {
       </div>
     </div>
   );
+}
+
+function AdminBrandIcon({ logoUrl, className }: { logoUrl: string; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [logoUrl]);
+  if (!logoUrl || failed) return <DeckMark className={className} />;
+  return <img src={logoUrl} alt="" className={className} onError={() => setFailed(true)} />;
 }
 
 function NavGroup({ label }: { label: string }) {

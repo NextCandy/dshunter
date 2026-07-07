@@ -12,15 +12,19 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnlockRouteImport } from './routes/unlock'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiSiteSettingsRouteImport } from './routes/api/site-settings'
 import { Route as ApiRegistrarSyncJobsRouteImport } from './routes/api/registrar-sync-jobs'
 import { Route as ApiRegistrarDomainsRouteImport } from './routes/api/registrar-domains'
+import { Route as AppSiteSettingsRouteImport } from './routes/_app.site-settings'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppRecordsRouteImport } from './routes/_app.records'
+import { Route as AppManualRouteImport } from './routes/_app.manual'
 import { Route as AppDomainsRouteImport } from './routes/_app.domains'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppBindRouteImport } from './routes/_app.bind'
 import { Route as AppBackupRouteImport } from './routes/_app.backup'
 import { Route as ApiRegistrarDomainsIdRouteImport } from './routes/api/registrar-domains/$id'
+import { Route as ApiAdminSiteSettingsRouteImport } from './routes/api/admin/site-settings'
 import { Route as ApiRegistrarsIdSyncDomainsRouteImport } from './routes/api/registrars/$id/sync-domains'
 
 const UnlockRoute = UnlockRouteImport.update({
@@ -37,6 +41,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSiteSettingsRoute = ApiSiteSettingsRouteImport.update({
+  id: '/api/site-settings',
+  path: '/api/site-settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRegistrarSyncJobsRoute = ApiRegistrarSyncJobsRouteImport.update({
   id: '/api/registrar-sync-jobs',
   path: '/api/registrar-sync-jobs',
@@ -47,6 +56,11 @@ const ApiRegistrarDomainsRoute = ApiRegistrarDomainsRouteImport.update({
   path: '/api/registrar-domains',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppSiteSettingsRoute = AppSiteSettingsRouteImport.update({
+  id: '/site-settings',
+  path: '/site-settings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -55,6 +69,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppRecordsRoute = AppRecordsRouteImport.update({
   id: '/records',
   path: '/records',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppManualRoute = AppManualRouteImport.update({
+  id: '/manual',
+  path: '/manual',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDomainsRoute = AppDomainsRouteImport.update({
@@ -82,6 +101,11 @@ const ApiRegistrarDomainsIdRoute = ApiRegistrarDomainsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiRegistrarDomainsRoute,
 } as any)
+const ApiAdminSiteSettingsRoute = ApiAdminSiteSettingsRouteImport.update({
+  id: '/api/admin/site-settings',
+  path: '/api/admin/site-settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRegistrarsIdSyncDomainsRoute =
   ApiRegistrarsIdSyncDomainsRouteImport.update({
     id: '/api/registrars/$id/sync-domains',
@@ -96,10 +120,14 @@ export interface FileRoutesByFullPath {
   '/bind': typeof AppBindRoute
   '/dashboard': typeof AppDashboardRoute
   '/domains': typeof AppDomainsRoute
+  '/manual': typeof AppManualRoute
   '/records': typeof AppRecordsRoute
   '/settings': typeof AppSettingsRoute
+  '/site-settings': typeof AppSiteSettingsRoute
   '/api/registrar-domains': typeof ApiRegistrarDomainsRouteWithChildren
   '/api/registrar-sync-jobs': typeof ApiRegistrarSyncJobsRoute
+  '/api/site-settings': typeof ApiSiteSettingsRoute
+  '/api/admin/site-settings': typeof ApiAdminSiteSettingsRoute
   '/api/registrar-domains/$id': typeof ApiRegistrarDomainsIdRoute
   '/api/registrars/$id/sync-domains': typeof ApiRegistrarsIdSyncDomainsRoute
 }
@@ -110,10 +138,14 @@ export interface FileRoutesByTo {
   '/bind': typeof AppBindRoute
   '/dashboard': typeof AppDashboardRoute
   '/domains': typeof AppDomainsRoute
+  '/manual': typeof AppManualRoute
   '/records': typeof AppRecordsRoute
   '/settings': typeof AppSettingsRoute
+  '/site-settings': typeof AppSiteSettingsRoute
   '/api/registrar-domains': typeof ApiRegistrarDomainsRouteWithChildren
   '/api/registrar-sync-jobs': typeof ApiRegistrarSyncJobsRoute
+  '/api/site-settings': typeof ApiSiteSettingsRoute
+  '/api/admin/site-settings': typeof ApiAdminSiteSettingsRoute
   '/api/registrar-domains/$id': typeof ApiRegistrarDomainsIdRoute
   '/api/registrars/$id/sync-domains': typeof ApiRegistrarsIdSyncDomainsRoute
 }
@@ -126,10 +158,14 @@ export interface FileRoutesById {
   '/_app/bind': typeof AppBindRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/domains': typeof AppDomainsRoute
+  '/_app/manual': typeof AppManualRoute
   '/_app/records': typeof AppRecordsRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/site-settings': typeof AppSiteSettingsRoute
   '/api/registrar-domains': typeof ApiRegistrarDomainsRouteWithChildren
   '/api/registrar-sync-jobs': typeof ApiRegistrarSyncJobsRoute
+  '/api/site-settings': typeof ApiSiteSettingsRoute
+  '/api/admin/site-settings': typeof ApiAdminSiteSettingsRoute
   '/api/registrar-domains/$id': typeof ApiRegistrarDomainsIdRoute
   '/api/registrars/$id/sync-domains': typeof ApiRegistrarsIdSyncDomainsRoute
 }
@@ -142,10 +178,14 @@ export interface FileRouteTypes {
     | '/bind'
     | '/dashboard'
     | '/domains'
+    | '/manual'
     | '/records'
     | '/settings'
+    | '/site-settings'
     | '/api/registrar-domains'
     | '/api/registrar-sync-jobs'
+    | '/api/site-settings'
+    | '/api/admin/site-settings'
     | '/api/registrar-domains/$id'
     | '/api/registrars/$id/sync-domains'
   fileRoutesByTo: FileRoutesByTo
@@ -156,10 +196,14 @@ export interface FileRouteTypes {
     | '/bind'
     | '/dashboard'
     | '/domains'
+    | '/manual'
     | '/records'
     | '/settings'
+    | '/site-settings'
     | '/api/registrar-domains'
     | '/api/registrar-sync-jobs'
+    | '/api/site-settings'
+    | '/api/admin/site-settings'
     | '/api/registrar-domains/$id'
     | '/api/registrars/$id/sync-domains'
   id:
@@ -171,10 +215,14 @@ export interface FileRouteTypes {
     | '/_app/bind'
     | '/_app/dashboard'
     | '/_app/domains'
+    | '/_app/manual'
     | '/_app/records'
     | '/_app/settings'
+    | '/_app/site-settings'
     | '/api/registrar-domains'
     | '/api/registrar-sync-jobs'
+    | '/api/site-settings'
+    | '/api/admin/site-settings'
     | '/api/registrar-domains/$id'
     | '/api/registrars/$id/sync-domains'
   fileRoutesById: FileRoutesById
@@ -185,6 +233,8 @@ export interface RootRouteChildren {
   UnlockRoute: typeof UnlockRoute
   ApiRegistrarDomainsRoute: typeof ApiRegistrarDomainsRouteWithChildren
   ApiRegistrarSyncJobsRoute: typeof ApiRegistrarSyncJobsRoute
+  ApiSiteSettingsRoute: typeof ApiSiteSettingsRoute
+  ApiAdminSiteSettingsRoute: typeof ApiAdminSiteSettingsRoute
   ApiRegistrarsIdSyncDomainsRoute: typeof ApiRegistrarsIdSyncDomainsRoute
 }
 
@@ -211,6 +261,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/site-settings': {
+      id: '/api/site-settings'
+      path: '/api/site-settings'
+      fullPath: '/api/site-settings'
+      preLoaderRoute: typeof ApiSiteSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/registrar-sync-jobs': {
       id: '/api/registrar-sync-jobs'
       path: '/api/registrar-sync-jobs'
@@ -225,6 +282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRegistrarDomainsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/site-settings': {
+      id: '/_app/site-settings'
+      path: '/site-settings'
+      fullPath: '/site-settings'
+      preLoaderRoute: typeof AppSiteSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -237,6 +301,13 @@ declare module '@tanstack/react-router' {
       path: '/records'
       fullPath: '/records'
       preLoaderRoute: typeof AppRecordsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/manual': {
+      id: '/_app/manual'
+      path: '/manual'
+      fullPath: '/manual'
+      preLoaderRoute: typeof AppManualRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/domains': {
@@ -274,6 +345,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRegistrarDomainsIdRouteImport
       parentRoute: typeof ApiRegistrarDomainsRoute
     }
+    '/api/admin/site-settings': {
+      id: '/api/admin/site-settings'
+      path: '/api/admin/site-settings'
+      fullPath: '/api/admin/site-settings'
+      preLoaderRoute: typeof ApiAdminSiteSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/registrars/$id/sync-domains': {
       id: '/api/registrars/$id/sync-domains'
       path: '/api/registrars/$id/sync-domains'
@@ -289,8 +367,10 @@ interface AppRouteChildren {
   AppBindRoute: typeof AppBindRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDomainsRoute: typeof AppDomainsRoute
+  AppManualRoute: typeof AppManualRoute
   AppRecordsRoute: typeof AppRecordsRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppSiteSettingsRoute: typeof AppSiteSettingsRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -298,8 +378,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppBindRoute: AppBindRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDomainsRoute: AppDomainsRoute,
+  AppManualRoute: AppManualRoute,
   AppRecordsRoute: AppRecordsRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppSiteSettingsRoute: AppSiteSettingsRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -321,6 +403,8 @@ const rootRouteChildren: RootRouteChildren = {
   UnlockRoute: UnlockRoute,
   ApiRegistrarDomainsRoute: ApiRegistrarDomainsRouteWithChildren,
   ApiRegistrarSyncJobsRoute: ApiRegistrarSyncJobsRoute,
+  ApiSiteSettingsRoute: ApiSiteSettingsRoute,
+  ApiAdminSiteSettingsRoute: ApiAdminSiteSettingsRoute,
   ApiRegistrarsIdSyncDomainsRoute: ApiRegistrarsIdSyncDomainsRoute,
 }
 export const routeTree = rootRouteImport
