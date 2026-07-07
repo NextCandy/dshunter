@@ -11,7 +11,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, type ReactNode } from "react";
 import { checkGate, lockSite } from "@/lib/gate.functions";
 import { getSiteSettings } from "@/lib/site-settings.functions";
-import { useDomains } from "@/lib/domain-store";
+import {
+  listNotificationCenter,
+  type NotificationCenterItem,
+} from "@/lib/notification-center.functions";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import { DeckMark } from "@/components/deck-mark";
@@ -71,6 +74,7 @@ const HEADINGS: { to: string; title: string; sub: string }[] = [
   { to: "/bind", title: "批量绑定", sub: "接入 Cloudflare" },
   { to: "/records", title: "解析记录", sub: "DNS 记录管理" },
   { to: "/backup", title: "数据管理", sub: "备份 · 恢复 · 导入导出" },
+  { to: "/notifications", title: "通知中心", sub: "到期、同步与解析风险" },
   { to: "/site-settings", title: "前台设置", sub: "公开页展示与联系信息" },
   { to: "/settings", title: "系统设置", sub: "凭证、注册商与偏好" },
 ];
@@ -79,15 +83,20 @@ function AppLayout() {
   const router = useRouter();
   const lock = useServerFn(lockSite);
   const getSettings = useServerFn(getSiteSettings);
+  const getNotifications = useServerFn(listNotificationCenter);
   const settingsQuery = useQuery({
     queryKey: ["site-settings"],
     queryFn: () => getSettings(),
     staleTime: 60_000,
   });
+  const notificationsQuery = useQuery({
+    queryKey: ["notification-center"],
+    queryFn: () => getNotifications(),
+    refetchInterval: 60_000,
+  });
   const siteName = settingsQuery.data?.settings.siteName || "DS Hunter";
   const logoUrl = settingsQuery.data?.settings.logoUrl || "";
-  const domains = useDomains();
-  const notifications = buildNotifications(domains);
+  const notifications = notificationsQuery.data?.items ?? [];
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
@@ -217,7 +226,7 @@ function ThemeSwitch() {
   );
 }
 
-function NotificationsBell({ notifications }: { notifications: NotificationItem[] }) {
+function NotificationsBell({ notifications }: { notifications: NotificationCenterItem[] }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -245,10 +254,15 @@ function NotificationsBell({ notifications }: { notifications: NotificationItem[
         </div>
         <div className="max-h-80 overflow-auto p-1.5">
           {notifications.slice(0, 6).map((item) => (
-            <div key={item.title} className="flex gap-2.5 rounded-lg p-2.5 hover:bg-muted/50">
-              <span className="signal signal-warning mt-1.5 shrink-0" />
+            <div key={item.id} className="flex gap-2.5 rounded-lg p-2.5 hover:bg-muted/50">
+              <span className={cn("signal mt-1.5 shrink-0", notificationSignal(item.severity))} />
               <div className="min-w-0">
-                <div className="truncate text-sm font-medium">{item.title}</div>
+                <div className="flex items-center gap-1.5">
+                  <div className="truncate text-sm font-medium">{item.title}</div>
+                  <Badge variant="secondary" className="shrink-0 text-[10px]">
+                    {notificationKindLabel(item.kind)}
+                  </Badge>
+                </div>
                 <div className="mt-0.5 text-xs text-muted-foreground">{item.description}</div>
               </div>
             </div>
@@ -260,14 +274,26 @@ function NotificationsBell({ notifications }: { notifications: NotificationItem[
           )}
         </div>
         <Link
-          to="/domains"
+          to="/notifications"
           className="block border-t border-border/60 px-4 py-2.5 text-center text-sm font-medium text-primary hover:bg-primary/5"
         >
-          查看全部域名
+          打开通知中心
         </Link>
       </PopoverContent>
     </Popover>
   );
+}
+
+function notificationSignal(severity: NotificationCenterItem["severity"]) {
+  if (severity === "critical") return "signal-danger";
+  if (severity === "warning") return "signal-warning";
+  return "signal-primary";
+}
+
+function notificationKindLabel(kind: NotificationCenterItem["kind"]) {
+  if (kind === "expiry") return "到期";
+  if (kind === "sync") return "同步";
+  return "DNS";
 }
 
 function SidebarNav({
@@ -331,6 +357,14 @@ function SidebarNav({
       <NavGroup label="系统" collapsed={collapsed} />
       <NavItem to="/backup" icon={<DatabaseBackup className="size-4" />} collapsed={collapsed}>
         数据管理
+      </NavItem>
+      <NavItem
+        to="/notifications"
+        icon={<Bell className="size-4" />}
+        badge={riskCount > 0 ? String(riskCount) : undefined}
+        collapsed={collapsed}
+      >
+        通知中心
       </NavItem>
       <NavItem to="/site-settings" icon={<Archive className="size-4" />} collapsed={collapsed}>
         前台设置
@@ -495,14 +529,4 @@ function UserMenu({ siteName, onLock }: { siteName: string; onLock: () => void |
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-
-type NotificationItem = { title: string; description: string };
-
-function buildNotifications(domains: string[]): NotificationItem[] {
-  if (domains.length === 0) return [];
-  return domains.slice(0, 5).map((domain) => ({
-    title: `解析待确认：${domain}`,
-    description: "尚未完成 DNS 检测，进入解析记录页确认 Zone 状态。",
-  }));
 }

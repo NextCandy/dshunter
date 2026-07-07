@@ -18,6 +18,7 @@ import { Route as ApiRegistrarDomainsRouteImport } from './routes/api/registrar-
 import { Route as AppSiteSettingsRouteImport } from './routes/_app.site-settings'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppRecordsRouteImport } from './routes/_app.records'
+import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppManualRouteImport } from './routes/_app.manual'
 import { Route as AppDomainsRouteImport } from './routes/_app.domains'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
@@ -71,6 +72,11 @@ const AppRecordsRoute = AppRecordsRouteImport.update({
   path: '/records',
   getParentRoute: () => AppRoute,
 } as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppManualRoute = AppManualRouteImport.update({
   id: '/manual',
   path: '/manual',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/domains': typeof AppDomainsRoute
   '/manual': typeof AppManualRoute
+  '/notifications': typeof AppNotificationsRoute
   '/records': typeof AppRecordsRoute
   '/settings': typeof AppSettingsRoute
   '/site-settings': typeof AppSiteSettingsRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/domains': typeof AppDomainsRoute
   '/manual': typeof AppManualRoute
+  '/notifications': typeof AppNotificationsRoute
   '/records': typeof AppRecordsRoute
   '/settings': typeof AppSettingsRoute
   '/site-settings': typeof AppSiteSettingsRoute
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/domains': typeof AppDomainsRoute
   '/_app/manual': typeof AppManualRoute
+  '/_app/notifications': typeof AppNotificationsRoute
   '/_app/records': typeof AppRecordsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/site-settings': typeof AppSiteSettingsRoute
@@ -179,6 +188,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/domains'
     | '/manual'
+    | '/notifications'
     | '/records'
     | '/settings'
     | '/site-settings'
@@ -197,6 +207,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/domains'
     | '/manual'
+    | '/notifications'
     | '/records'
     | '/settings'
     | '/site-settings'
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/domains'
     | '/_app/manual'
+    | '/_app/notifications'
     | '/_app/records'
     | '/_app/settings'
     | '/_app/site-settings'
@@ -303,6 +315,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecordsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/notifications': {
+      id: '/_app/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/manual': {
       id: '/_app/manual'
       path: '/manual'
@@ -368,6 +387,7 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppDomainsRoute: typeof AppDomainsRoute
   AppManualRoute: typeof AppManualRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
   AppRecordsRoute: typeof AppRecordsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSiteSettingsRoute: typeof AppSiteSettingsRoute
@@ -379,6 +399,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppDomainsRoute: AppDomainsRoute,
   AppManualRoute: AppManualRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
   AppRecordsRoute: AppRecordsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSiteSettingsRoute: AppSiteSettingsRoute,
