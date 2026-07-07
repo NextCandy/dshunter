@@ -6,12 +6,10 @@ import { getTokenStatus } from "@/lib/registrars.functions";
 import { getCfHealth } from "@/lib/cloudflare.functions";
 import { useDomains } from "@/lib/domain-store";
 import { formatDateTime } from "@/lib/date-format";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  CheckCircle2,
-  XCircle,
   Globe,
   Link2,
   ListTree,
@@ -19,12 +17,10 @@ import {
   KeyRound,
   ShieldCheck,
   ShieldAlert,
-  Boxes,
-  Clock3,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/dashboard")({
-  head: () => ({ meta: [{ title: "仪表盘 · dshunter" }] }),
+  head: () => ({ meta: [{ title: "指挥台 · dshunter" }] }),
   component: Dashboard,
 });
 
@@ -61,93 +57,116 @@ function Dashboard() {
   const configuredCount = tokens.data
     ? SOURCES.filter((s) => (tokens.data as any)[s.key]).length
     : null;
-  const estimatedValue = "--";
+
+  const stats: StatReadout[] = [
+    {
+      label: "已配置来源",
+      value: configuredCount === null ? "…" : `${configuredCount}/${SOURCES.length}`,
+      dot: "signal-primary",
+      to: "/settings",
+    },
+    {
+      label: "Cloudflare Zone",
+      value: health.isLoading
+        ? "…"
+        : health.data?.zoneCount != null
+          ? String(health.data.zoneCount)
+          : "—",
+      sub:
+        health.data?.zoneCount != null && health.data.activeZones != null
+          ? `${health.data.activeZones} 个已激活`
+          : undefined,
+      dot: "signal-success",
+      to: "/domains",
+    },
+    {
+      label: "工作集域名",
+      value: String(workingSet.length),
+      sub: workingSet.length > 0 ? "可直接批量绑定 / 解析" : "到域名列表选择",
+      dot: workingSet.length > 0 ? "signal-warning" : "signal-muted",
+      to: "/records",
+    },
+    {
+      label: "最近拉取",
+      value: lastPull ? String(lastPull.count) : "—",
+      sub: lastPull ? `${lastPull.source} · ${formatDateTime(lastPull.at)}` : "还没有拉取记录",
+      dot: "signal-muted",
+      to: "/domains",
+    },
+  ];
 
   return (
-    <div className="max-w-6xl">
-      <h1 className="text-2xl font-bold tracking-tight mb-1">仪表盘</h1>
-      <p className="text-sm text-muted-foreground mb-5">
-        域名运营概览：来源配置、Cloudflare 接入与工作集状态。
-      </p>
+    <div className="mx-auto max-w-6xl space-y-6">
+      {/* 概览横幅 */}
+      <section className="relative overflow-hidden rounded-2xl border border-border/60 bg-card">
+        <div className="pointer-events-none absolute inset-0 bg-blueprint opacity-50" />
+        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative p-5 md:p-6">
+          <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+            <span className="signal signal-success signal-pulse" />
+            System Overview
+          </div>
+          <h1 className="mt-3 font-display text-2xl font-bold tracking-tight">运营概览</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            来源配置、Cloudflare 接入与工作集状态一览。
+          </p>
 
-      {/* 关键指标 */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 mb-5">
-        <StatCard
-          icon={<Boxes className="size-4" />}
-          label="已配置来源"
-          value={configuredCount === null ? "…" : `${configuredCount} / ${SOURCES.length}`}
-          to="/settings"
-        />
-        <StatCard
-          icon={<Globe className="size-4" />}
-          label="Cloudflare Zone"
-          value={
-            health.isLoading
-              ? "…"
-              : health.data?.zoneCount != null
-                ? String(health.data.zoneCount)
-                : "—"
-          }
-          sub={
-            health.data?.zoneCount != null && health.data.activeZones != null
-              ? `${health.data.activeZones} 个已激活`
-              : undefined
-          }
-          to="/domains"
-        />
-        <StatCard
-          icon={<ListTree className="size-4" />}
-          label="工作集域名"
-          value={String(workingSet.length)}
-          sub={workingSet.length > 0 ? "可直接批量绑定 / 解析" : "到域名列表选择"}
-          to="/records"
-        />
-        <StatCard
-          icon={<ShieldCheck className="size-4" />}
-          label="估算价值"
-          value={estimatedValue}
-          sub="未接入 renewalPrice 时不展示假增量"
-          to="/domains"
-        />
-        <StatCard
-          icon={<Clock3 className="size-4" />}
-          label="最近拉取"
-          value={lastPull ? `${lastPull.count} 个` : "—"}
-          sub={
-            lastPull
-              ? `${lastPull.source} · ${formatDateTime(lastPull.at)}`
-              : "还没有拉取记录"
-          }
-          to="/domains"
-        />
-      </div>
+          <div className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border/60 bg-border/60 md:grid-cols-4">
+            {stats.map((s) => (
+              <Link
+                key={s.label}
+                to={s.to}
+                className="group bg-card p-4 transition-colors hover:bg-muted/40"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className={cn("signal", s.dot)} />
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {s.label}
+                  </span>
+                </div>
+                <div className="mt-2 font-display text-2xl font-bold tabular">{s.value}</div>
+                {s.sub && (
+                  <div className="mt-0.5 truncate text-xs text-muted-foreground">{s.sub}</div>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Cloudflare 健康状态 */}
-      <Card className="p-4 mb-5">
+      <Card className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-sm">
             {health.isLoading ? (
-              <Badge variant="secondary">检测中…</Badge>
+              <>
+                <span className="signal signal-muted" />
+                <span className="text-muted-foreground">检测中…</span>
+              </>
             ) : health.data?.tokenStatus === "active" && !health.data.error ? (
-              <span className="flex items-center gap-1.5 text-sm text-green-600">
-                <ShieldCheck className="size-4" />
-                Cloudflare Token 有效，Zone 读取正常
-              </span>
+              <>
+                <span className="signal signal-success" />
+                <ShieldCheck className="size-4 text-success" />
+                <span className="text-success">Cloudflare Token 有效，Zone 读取正常</span>
+              </>
             ) : health.data?.tokenStatus === "active" && health.data.error ? (
-              <span className="flex items-center gap-1.5 text-sm text-amber-600">
-                <ShieldAlert className="size-4" />
-                Token 有效但权限不足
-              </span>
+              <>
+                <span className="signal signal-warning" />
+                <ShieldAlert className="size-4 text-warning" />
+                <span className="text-warning">Token 有效但权限不足</span>
+              </>
             ) : health.data?.tokenStatus === "invalid" ? (
-              <span className="flex items-center gap-1.5 text-sm text-destructive">
-                <ShieldAlert className="size-4" />
-                Cloudflare Token 无效（verify 未通过）
-              </span>
+              <>
+                <span className="signal signal-danger" />
+                <ShieldAlert className="size-4 text-destructive" />
+                <span className="text-destructive">Cloudflare Token 无效（verify 未通过）</span>
+              </>
             ) : (
-              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <KeyRound className="size-4" />
-                Cloudflare Token 未配置
-              </span>
+              <>
+                <span className="signal signal-muted" />
+                <KeyRound className="size-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Cloudflare Token 未配置</span>
+              </>
             )}
           </div>
           {health.data && (health.data.tokenStatus !== "active" || health.data.error) && (
@@ -167,10 +186,10 @@ function Dashboard() {
         )}
       </Card>
 
-      {/* 来源配置状态 */}
-      <Card className="p-4 mb-5">
+      {/* 来源凭证矩阵 */}
+      <Card className="p-4">
         <div className="mb-3 flex items-center justify-between">
-          <div className="font-semibold">API 凭证状态</div>
+          <div className="font-display font-semibold">API 凭证状态</div>
           <Button asChild size="sm" variant="ghost">
             <Link to="/settings">管理</Link>
           </Button>
@@ -181,16 +200,16 @@ function Dashboard() {
             return (
               <div
                 key={s.key}
-                className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+                className="flex items-center justify-between rounded-lg border border-border/60 bg-card px-3 py-2 text-sm"
               >
                 <span>{s.label}</span>
-                {ok === undefined ? (
-                  <span className="text-xs text-muted-foreground">…</span>
-                ) : ok ? (
-                  <CheckCircle2 className="size-4 text-green-600" />
-                ) : (
-                  <XCircle className="size-4 text-muted-foreground" />
-                )}
+                <span
+                  className={cn(
+                    "signal",
+                    ok === undefined ? "signal-muted" : ok ? "signal-success" : "signal-muted",
+                    ok === false && "opacity-40",
+                  )}
+                />
               </div>
             );
           })}
@@ -221,39 +240,20 @@ function Dashboard() {
           to="/settings"
           icon={<Settings className="size-5" />}
           title="设置"
-          desc="API 凭证与主题"
+          desc="API 凭证与偏好"
         />
       </div>
     </div>
   );
 }
 
-function StatCard({
-  icon,
-  label,
-  value,
-  sub,
-  to,
-}: {
-  icon: React.ReactNode;
+type StatReadout = {
   label: string;
   value: string;
   sub?: string;
+  dot: string;
   to: string;
-}) {
-  return (
-    <Link to={to}>
-      <Card className="p-4 transition-colors hover:bg-accent/50">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          {icon}
-          {label}
-        </div>
-        <div className="mt-1 font-mono text-2xl font-semibold tabular-nums">{value}</div>
-        {sub && <div className="mt-0.5 truncate text-xs text-muted-foreground">{sub}</div>}
-      </Card>
-    </Link>
-  );
-}
+};
 
 function QuickLink({
   to,
@@ -267,12 +267,15 @@ function QuickLink({
   desc: string;
 }) {
   return (
-    <Link to={to}>
-      <Card className="flex flex-col gap-1.5 p-4 transition-colors hover:bg-accent">
+    <Link
+      to={to}
+      className="group rounded-xl border border-border/60 bg-card p-4 transition-all hover:border-primary/40 hover:bg-muted/30"
+    >
+      <span className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary ring-1 ring-inset ring-primary/20">
         {icon}
-        <div className="font-medium">{title}</div>
-        <div className="text-xs text-muted-foreground">{desc}</div>
-      </Card>
+      </span>
+      <div className="mt-3 font-medium">{title}</div>
+      <div className="text-xs text-muted-foreground">{desc}</div>
     </Link>
   );
 }

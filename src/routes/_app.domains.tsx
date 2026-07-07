@@ -34,12 +34,14 @@ import {
   Globe2,
   ListChecks,
   Loader2,
+  PenLine,
+  ScanSearch,
   Search,
   Server,
   Settings,
-  SlidersHorizontal,
   XCircle,
 } from "lucide-react";
+import { DnsDialog } from "@/components/dns-dialog";
 
 export const Route = createFileRoute("/_app/domains")({
   head: () => ({ meta: [{ title: "域名列表 · dshunter" }] }),
@@ -134,7 +136,7 @@ function DomainsPage() {
   });
   const tokenPresence: TokenStatus = tokens.data ?? {};
 
-  const [manual, setManual] = useState("");
+  const [dnsDomain, setDnsDomain] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [sourceFilter, setSourceFilter] = useState<Source | "all">("all");
   const [nsFilter, setNsFilter] = useState<NsStatus | "all">("all");
@@ -211,8 +213,6 @@ function DomainsPage() {
       return next;
     });
   }, [persistedAssets.data?.rows]);
-
-  const manualDomains = useMemo(() => parseDomainList(manual), [manual]);
 
   const pull = useMutation({
     mutationFn: async (src: Source) => {
@@ -314,12 +314,9 @@ function DomainsPage() {
       if (!entry.nsError && item.nsError) entry.nsError = item.nsError;
       map.set(domain, entry);
     };
-    manualDomains.forEach((domain) =>
-      add({ domain, nameservers: [], nsStatus: "unknown" }, "manual"),
-    );
     (Object.keys(pulled) as Source[]).forEach((s) => pulled[s].forEach((item) => add(item, s)));
     return [...map.values()].sort((a, b) => a.domain.localeCompare(b.domain));
-  }, [manualDomains, pulled]);
+  }, [pulled]);
 
   const cfZonePulled = pullState["cloudflare-zone"].status === "success";
 
@@ -384,7 +381,7 @@ function DomainsPage() {
     <div className="flex max-w-7xl flex-col gap-5 xl:h-[calc(100vh-7rem)] xl:min-h-[720px]">
       <div className="shrink-0 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">域名列表</h1>
+          <h1 className="font-display text-2xl font-bold tracking-tight">域名列表</h1>
           <p className="text-sm text-muted-foreground">
             从注册商和 Cloudflare 拉取域名，合并去重后进入绑定或单域名 DNS 管理。
           </p>
@@ -399,24 +396,19 @@ function DomainsPage() {
 
       <div className="grid grid-cols-1 gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(320px,380px)_1fr]">
         <div className="space-y-4 xl:min-h-0 xl:overflow-auto xl:pr-1">
-          <Card className="p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <div className="font-semibold">手动粘贴</div>
-                <div className="text-xs text-muted-foreground">可混合 URL、逗号、空格和换行</div>
+          <Card className="flex items-center justify-between gap-3 p-4">
+            <div>
+              <div className="font-semibold">手动添加的域名？</div>
+              <div className="text-xs text-muted-foreground">
+                手动输入 / CSV 导入已移至独立页面
               </div>
-              <Badge variant="secondary">{manualDomains.length}</Badge>
             </div>
-            <Textarea
-              rows={7}
-              placeholder={"每行一个域名，例如：\nexample.com\nfoo.io"}
-              value={manual}
-              onChange={(e) => setManual(e.target.value)}
-              className="font-mono text-sm"
-            />
-            <p className="mt-2 text-xs text-muted-foreground">
-              自动去掉 http(s)://、路径、查询参数和 www 前缀，非法行会被忽略。
-            </p>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/manual">
+                <PenLine className="mr-1 size-3.5" />
+                去手动域名
+              </Link>
+            </Button>
           </Card>
 
           <Card className="p-4">
@@ -540,7 +532,6 @@ function DomainsPage() {
                 className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm"
               >
                 <option value="all">全部来源</option>
-                <option value="manual">手动粘贴 ({sourceCounts.manual ?? 0})</option>
                 {SOURCE_DEFS.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.label} ({sourceCounts[s.id] ?? 0})
@@ -695,8 +686,8 @@ function DomainsPage() {
                       </td>
                       <td className="p-3">
                         <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => openDns(e.domain)}>
-                            <SlidersHorizontal className="mr-1 size-3.5" />
+                          <Button variant="outline" size="sm" onClick={() => setDnsDomain(e.domain)}>
+                            <ScanSearch className="mr-1 size-3.5" />
                             DNS
                           </Button>
                           <Button
@@ -720,6 +711,12 @@ function DomainsPage() {
           </div>
         </Card>
       </div>
+
+      <DnsDialog
+        domain={dnsDomain}
+        onClose={() => setDnsDomain(null)}
+        onEditInCloudflare={openDns}
+      />
     </div>
   );
 }
@@ -741,7 +738,7 @@ function combineNsStatus(a: NsStatus, b: NsStatus): NsStatus {
 
 function nsBadge(status: NsStatus) {
   if (status === "cloudflare") {
-    return <Badge className="w-fit bg-green-600 hover:bg-green-600">已指向 CF</Badge>;
+    return <Badge className="w-fit bg-success text-success-foreground hover:bg-success">已指向 CF</Badge>;
   }
   if (status === "other")
     return (
@@ -762,11 +759,11 @@ function zoneBadge(entry: Entry, cfZonePulled: boolean) {
   if (zone) {
     const s = zone.cloudflareStatus ?? "unknown";
     if (s === "active") {
-      return <Badge className="bg-green-600 hover:bg-green-600 text-[10px]">active</Badge>;
+      return <Badge className="bg-success text-success-foreground hover:bg-success text-[10px]">active</Badge>;
     }
     if (s === "pending") {
       return (
-        <Badge variant="outline" className="border-amber-500 text-amber-600 text-[10px]">
+        <Badge variant="outline" className="border-warning/50 text-warning text-[10px]">
           pending
         </Badge>
       );
@@ -810,7 +807,7 @@ function SourcePullRow({
           <div className="flex items-center gap-2">
             <span className="truncate text-sm font-medium">{source.label}</span>
             {configured ? (
-              <CheckCircle2 className="size-3.5 text-green-600" />
+              <CheckCircle2 className="size-3.5 text-success" />
             ) : (
               <XCircle className="size-3.5 text-muted-foreground" />
             )}
@@ -838,7 +835,7 @@ function SourcePullRow({
       <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
           {status === "success" ? (
-            <CheckCircle2 className="size-3.5 text-green-600" />
+            <CheckCircle2 className="size-3.5 text-success" />
           ) : status === "error" ? (
             <XCircle className="size-3.5 text-destructive" />
           ) : status === "loading" ? (

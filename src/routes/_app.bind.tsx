@@ -81,7 +81,7 @@ function BindPage() {
     <div className="flex max-w-7xl flex-col gap-4 xl:h-[calc(100vh-6.5rem)] xl:min-h-[640px]">
       <div className="flex shrink-0 flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">批量绑定到 Cloudflare</h1>
+          <h1 className="font-display text-2xl font-bold tracking-tight">批量绑定到 Cloudflare</h1>
           <p className="text-sm text-muted-foreground">
             为目标域名创建 CF Zone；可选自动改注册商 NS，并触发激活检查。已存在的 Zone 不算失败。
           </p>
@@ -217,7 +217,7 @@ function BindPage() {
               <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-muted/30 p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold">结果（{results.length}）</span>
-                  <Badge className="bg-green-600 hover:bg-green-600">
+                  <Badge className="bg-success text-success-foreground hover:bg-success">
                     新建 {results.filter((r) => r.zoneCreated === "ok").length}
                   </Badge>
                   <Badge variant="secondary">
@@ -477,7 +477,7 @@ const BIND_STATUS_LABEL: Record<string, string> = {
 function StatusBadge({ status }: { status: string }) {
   const color =
     status === "ok" || status === "exists"
-      ? "bg-green-500/15 text-green-700 dark:text-green-400"
+      ? "bg-success/15 text-success"
       : status === "error"
         ? "bg-destructive/15 text-destructive"
         : "bg-muted text-muted-foreground";

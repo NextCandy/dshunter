@@ -12,13 +12,22 @@ import { type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider, themeInitScript } from "@/components/theme-provider";
+import { DeckMark } from "@/components/deck-mark";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">页面不存在</h2>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
+      <div className="pointer-events-none absolute inset-0 bg-blueprint opacity-50" />
+      <div className="pointer-events-none absolute left-1/2 top-1/3 h-72 w-[32rem] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
+      <div className="relative max-w-md text-center">
+        <div className="mx-auto mb-5 grid size-12 place-items-center rounded-2xl bg-primary/12 text-primary ring-1 ring-inset ring-primary/25">
+          <DeckMark className="size-6" />
+        </div>
+        <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          Error 404
+        </div>
+        <h1 className="mt-2 font-display text-6xl font-bold tracking-tight text-foreground">404</h1>
+        <h2 className="mt-3 text-lg font-semibold text-foreground">页面不存在</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           你访问的页面不存在，或已经被移动。
         </p>
@@ -40,9 +49,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
+      <div className="pointer-events-none absolute inset-0 bg-blueprint opacity-50" />
+      <div className="relative max-w-md text-center">
+        <div className="mx-auto mb-5 grid size-12 place-items-center rounded-2xl bg-destructive/12 text-destructive ring-1 ring-inset ring-destructive/25">
+          <DeckMark className="size-6" />
+        </div>
+        <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          System Error
+        </div>
+        <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-foreground">
           页面载入失败
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -98,6 +114,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),

@@ -92,7 +92,7 @@ function RecordsPage() {
     <div className="flex max-w-7xl flex-col gap-4 xl:h-[calc(100vh-6.5rem)] xl:min-h-[680px]">
       <div className="flex shrink-0 flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">解析记录</h1>
+          <h1 className="font-display text-2xl font-bold tracking-tight">解析记录</h1>
           <p className="text-sm text-muted-foreground">
             先处理一个域名的 DNS，再把稳定模板批量应用到工作集。
           </p>
@@ -365,7 +365,7 @@ function SingleDomainTab({ domains }: { domains: string[] }) {
                   <Badge
                     className={
                       zone.status === "active"
-                        ? "bg-green-600 hover:bg-green-600 text-[10px]"
+                        ? "bg-success text-success-foreground hover:bg-success text-[10px]"
                         : "text-[10px]"
                     }
                     variant={zone.status === "active" ? "default" : "outline"}
@@ -742,12 +742,12 @@ function AddTab({ domains }: { domains: string[] }) {
 function CsvReport({ parsed }: { parsed: { valid: ValidatedRecord[]; errors: CsvError[]; totalRows: number } }) {
   const hasErr = parsed.errors.length > 0;
   return (
-    <Card className={`p-3 border ${hasErr ? "border-destructive/50 bg-destructive/5" : "border-green-500/40 bg-green-500/5"}`}>
+    <Card className={`p-3 border ${hasErr ? "border-destructive/50 bg-destructive/5" : "border-success/40 bg-success/5"}`}>
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm">
-          {hasErr ? <FileWarning className="size-4 text-destructive" /> : <CheckCircle2 className="size-4 text-green-600" />}
+          {hasErr ? <FileWarning className="size-4 text-destructive" /> : <CheckCircle2 className="size-4 text-success" />}
           <span>
-            共 {parsed.totalRows} 行 · <span className="text-green-600">{parsed.valid.length} 通过</span>
+            共 {parsed.totalRows} 行 · <span className="text-success">{parsed.valid.length} 通过</span>
             {hasErr && <span className="ml-1 text-destructive">· {parsed.errors.length} 错误</span>}
           </span>
         </div>
@@ -1001,7 +1001,7 @@ function ResultTable({ results, kind }: { results: any[]; kind: "add" | "delete"
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-semibold">结果（{results.length}）</span>
-          <Badge className="bg-green-600 hover:bg-green-600">{okCount} 成功</Badge>
+          <Badge className="bg-success text-success-foreground hover:bg-success">{okCount} 成功</Badge>
           {skipCount > 0 && <Badge variant="secondary">{skipCount} 跳过</Badge>}
           {failCount > 0 && <Badge variant="destructive">{failCount} 失败</Badge>}
         </div>
@@ -1032,7 +1032,7 @@ function ResultTable({ results, kind }: { results: any[]; kind: "add" | "delete"
                   <td className="p-2 font-mono text-xs">{r.name}</td>
                   {kind === "add" && <td className="max-w-xs truncate p-2 font-mono text-xs">{r.content}</td>}
                   <td className="p-2">
-                    <span className={s.ok === true ? "text-green-600" : s.ok === false ? "text-destructive" : "text-muted-foreground"}>
+                    <span className={s.ok === true ? "text-success" : s.ok === false ? "text-destructive" : "text-muted-foreground"}>
                       {s.text}
                     </span>
                   </td>

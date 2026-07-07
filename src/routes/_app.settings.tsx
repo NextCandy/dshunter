@@ -116,7 +116,7 @@ function SettingsPage() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold mb-1">设置</h1>
+      <h1 className="font-display text-2xl font-bold mb-1">设置</h1>
       <p className="text-sm text-muted-foreground mb-6">管理外观，以及各注册商 / Cloudflare 的 API 凭证。</p>
 
       <Card className="p-4 mb-6">
@@ -227,7 +227,7 @@ function RegistrarCard({
       <div className="flex items-center justify-between mb-3">
         <div className="font-semibold">{reg.name}</div>
         {configured ? (
-          <span className="flex shrink-0 items-center gap-1 rounded-full bg-green-500/10 px-2 py-1 text-xs text-green-700 dark:text-green-300">
+          <span className="flex shrink-0 items-center gap-1 rounded-full bg-success/10 px-2 py-1 text-xs text-success">
             <CheckCircle2 className="size-3.5" /> 已连接
           </span>
         ) : (

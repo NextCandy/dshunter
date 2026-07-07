@@ -32,7 +32,7 @@ function BackupPage() {
   const domains = useDomains();
   return (
     <div className="max-w-6xl">
-      <h1 className="text-2xl font-bold mb-1">备份 · 恢复 · 差异</h1>
+      <h1 className="font-display text-2xl font-bold mb-1">备份 · 恢复 · 差异</h1>
       <div className="text-sm text-muted-foreground mb-6">
         当前选中 <Badge variant="secondary">{domains.length}</Badge> 个域名（在
         <Link to="/domains" className="text-primary underline mx-1">
@@ -186,12 +186,12 @@ function DiffTab() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
             <DiffCol
               title="仅在备份"
-              color="text-blue-600"
+              color="text-primary"
               items={r.onlyInBackup.map((x) => `${x.type} ${x.name} → ${x.content}`)}
             />
             <DiffCol
               title="仅在线上"
-              color="text-orange-600"
+              color="text-warning"
               items={r.onlyInLive.map((x) => `${x.type} ${x.name} → ${x.content}`)}
             />
             <DiffCol
@@ -352,8 +352,8 @@ function RestoreTab() {
         <Card className="p-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <div className="font-semibold">变更计划预览</div>
-            <Badge className="bg-green-600 hover:bg-green-600">创建 {totals.create}</Badge>
-            <Badge className="bg-blue-600 hover:bg-blue-600">更新 {totals.update}</Badge>
+            <Badge className="bg-success text-success-foreground hover:bg-success">创建 {totals.create}</Badge>
+            <Badge className="bg-primary text-primary-foreground hover:bg-primary">更新 {totals.update}</Badge>
             <Badge variant="destructive">删除 {totals.delete}</Badge>
             <Badge variant="secondary">跳过 {totals.skip}</Badge>
             {!hasChanges && (
@@ -379,10 +379,10 @@ function RestoreTab() {
                       <Badge variant="destructive">Zone 不存在</Badge>
                     ) : (
                       <>
-                        <Badge variant="outline" className="text-green-600 border-green-600/40">
+                        <Badge variant="outline" className="text-success border-success/40">
                           +{p.summary.create}
                         </Badge>
-                        <Badge variant="outline" className="text-blue-600 border-blue-600/40">
+                        <Badge variant="outline" className="text-primary border-primary/40">
                           ~{p.summary.update}
                         </Badge>
                         <Badge variant="outline" className="text-destructive border-destructive/40">
@@ -459,8 +459,8 @@ function RestoreTab() {
                 {applied.results.map((r) => (
                   <tr key={r.domain} className="border-t">
                     <td className="p-2 font-mono">{r.domain}</td>
-                    <td className="p-2 text-center text-green-600">{r.created}</td>
-                    <td className="p-2 text-center text-blue-600">{r.updated}</td>
+                    <td className="p-2 text-center text-success">{r.created}</td>
+                    <td className="p-2 text-center text-primary">{r.updated}</td>
                     <td className="p-2 text-center text-destructive">{r.deleted}</td>
                     <td className="p-2 text-center text-muted-foreground">{r.skipped}</td>
                     <td className="p-2 text-xs text-destructive">
@@ -482,8 +482,8 @@ function RestoreTab() {
 
 function OpBadge({ op }: { op: "create" | "update" | "delete" | "skip" }) {
   const map: Record<string, { label: string; cls: string }> = {
-    create: { label: "创建", cls: "bg-green-500/15 text-green-700 dark:text-green-300" },
-    update: { label: "更新", cls: "bg-blue-500/15 text-blue-700 dark:text-blue-300" },
+    create: { label: "创建", cls: "bg-success/15 text-success" },
+    update: { label: "更新", cls: "bg-primary/15 text-primary" },
     delete: { label: "删除", cls: "bg-destructive text-destructive-foreground" },
     skip: { label: "跳过", cls: "bg-muted text-muted-foreground" },
   };

@@ -5,8 +5,9 @@ FROM oven/bun:1.3.14 AS builder
 WORKDIR /app
 
 # 安装依赖（利用缓存层）
+# 注：不使用 --frozen-lockfile，以便新增字体依赖时在构建期解析并更新 lock。
 COPY package.json bun.lock* bun.lockb* bunfig.toml* ./
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # 拷贝源代码
 COPY . .
