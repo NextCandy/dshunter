@@ -145,9 +145,7 @@ function RecordsPage() {
       <Tabs defaultValue="single" className="xl:flex xl:min-h-0 xl:flex-1 xl:flex-col">
         <TabsList className="shrink-0">
           <TabsTrigger value="single">单域名 DNS</TabsTrigger>
-          <TabsTrigger value="add" disabled={domains.length === 0}>
-            批量添加
-          </TabsTrigger>
+          <TabsTrigger value="add">批量添加</TabsTrigger>
           <TabsTrigger value="delete" disabled={domains.length === 0}>
             批量删除
           </TabsTrigger>
@@ -156,7 +154,7 @@ function RecordsPage() {
           <SingleDomainTab domains={domains} />
         </TabsContent>
         <TabsContent value="add" className="xl:min-h-0 xl:flex-1 xl:overflow-auto">
-          {domains.length === 0 ? <NoDomains /> : <AddTab domains={domains} />}
+          <AddTab domains={domains} />
         </TabsContent>
         <TabsContent value="delete" className="xl:min-h-0 xl:flex-1 xl:overflow-auto">
           {domains.length === 0 ? <NoDomains /> : <DeleteTab domains={domains} />}
@@ -754,6 +752,7 @@ function AddTab({ domains }: { domains: string[] }) {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("__none");
   const [templateName, setTemplateName] = useState("");
   const [templateDesc, setTemplateDesc] = useState("");
+  const hasWorkset = domains.length > 0;
 
   const templatesQuery = useQuery({
     queryKey: ["dns-templates"],
@@ -768,6 +767,7 @@ function AddTab({ domains }: { domains: string[] }) {
     mutationFn: async () => {
       let records: BulkAddRecord[] = [];
       if (mode === "template") {
+        if (!hasWorkset) throw new Error("当前工作集为空，请先选择要应用模板的域名");
         // 模板行先做与 CSV 相同的内容校验，避免整批打到 API 才报错
         validateTemplateRows(tpls);
         for (const d of domains) {
@@ -836,10 +836,19 @@ function AddTab({ domains }: { domains: string[] }) {
   const csvValidCount = parsed?.valid.length ?? 0;
   const csvErrorCount = parsed?.errors.length ?? 0;
   const canExecute =
-    mode === "template" ? tpls.some((t) => t.content) : csvValidCount > 0 && csvErrorCount === 0;
+    mode === "template"
+      ? hasWorkset && tpls.some((t) => t.content)
+      : csvValidCount > 0 && csvErrorCount === 0;
 
   return (
     <div className="space-y-4">
+      {!hasWorkset && (
+        <Card className="border-dashed p-4 text-sm text-muted-foreground">
+          当前工作集为空。你仍然可以新建、保存和删除 DNS
+          模板；需要把模板应用到域名时，请先在域名列表选择工作集。
+        </Card>
+      )}
+
       {mode === "template" && (
         <Card className="p-4">
           <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
@@ -1036,7 +1045,9 @@ function AddTab({ domains }: { domains: string[] }) {
               <Plus className="mr-1 size-4" /> 添加一条
             </Button>
             <p className="text-xs text-muted-foreground">
-              模板将应用到全部 {domains.length} 个域名。TTL=1 表示 Auto。
+              {hasWorkset
+                ? `模板将应用到全部 ${domains.length} 个域名。TTL=1 表示 Auto。`
+                : "当前没有目标域名，模板只会保存到模板库，不会执行 DNS 变更。"}
             </p>
           </div>
         ) : (
@@ -1084,6 +1095,11 @@ function AddTab({ domains }: { domains: string[] }) {
       <Button onClick={() => exec.mutate()} disabled={exec.isPending || !canExecute}>
         {exec.isPending ? "执行中..." : "执行批量添加"}
       </Button>
+      {mode === "template" && !hasWorkset && (
+        <p className="text-xs text-muted-foreground">
+          批量执行需要至少 1 个工作集域名；模板保存不受此限制。
+        </p>
+      )}
 
       {exec.data && <ResultTable results={exec.data.results} kind="add" />}
     </div>
