@@ -82,7 +82,7 @@ type BindResult = {
 
 export const bindDomains = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator(
+  .validator(
     (d: {
       domains: string[];
       accountId: string;
@@ -241,7 +241,7 @@ async function classifyCfError(message: string): Promise<DnsListError> {
 
 export const listDnsRecords = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { domain: string }) => d)
+  .validator((d: { domain: string }) => d)
   .handler(async ({ data }) => {
     const domain = data.domain.trim().toLowerCase();
     if (!domain) {
@@ -299,7 +299,7 @@ export const listDnsRecords = createServerFn({ method: "POST" })
 
 export const saveDnsRecord = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator(
+  .validator(
     (d: {
       domain: string;
       id?: string;
@@ -337,7 +337,7 @@ export const saveDnsRecord = createServerFn({ method: "POST" })
 
 export const deleteDnsRecord = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { domain: string; id: string; zoneId?: string }) => d)
+  .validator((d: { domain: string; id: string; zoneId?: string }) => d)
   .handler(async ({ data }) => {
     if (!data.id) throw new Error("缺少 DNS 记录 ID");
     const cf = await import("./registrars/cloudflare.server");
@@ -357,7 +357,7 @@ export const deleteDnsRecord = createServerFn({ method: "POST" })
 
 export const bulkAddRecords = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { records: RecordSpec[]; upsert: boolean }) => d)
+  .validator((d: { records: RecordSpec[]; upsert: boolean }) => d)
   .handler(async ({ data }) => {
     const cf = await import("./registrars/cloudflare.server");
     const domains = [...new Set(data.records.map((r) => r.domain))];
@@ -440,7 +440,7 @@ export type DeleteFilter = {
 
 export const previewDeleteRecords = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { domains: string[]; filter: DeleteFilter }) => d)
+  .validator((d: { domains: string[]; filter: DeleteFilter }) => d)
   .handler(async ({ data }) => {
     const cf = await import("./registrars/cloudflare.server");
     const zoneMap = await resolveZoneIds(data.domains);
@@ -475,7 +475,7 @@ export const previewDeleteRecords = createServerFn({ method: "POST" })
 
 export const executeDeleteRecords = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator(
+  .validator(
     (d: { items: { zoneId: string; id: string; domain: string; name: string; type: string }[] }) =>
       d,
   )

@@ -42,14 +42,14 @@ export const getTokenStatus = createServerFn({ method: "GET" })
 
 export const listRegistrarDomains = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { registrar: Registrar; accountId?: string }) => d)
+  .validator((d: { registrar: Registrar; accountId?: string }) => d)
   .handler(async ({ data }) => {
     return syncRegistrarDomains(data);
   });
 
 export const previewRegistrarSync = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { registrar: Registrar; accountId?: string }) => d)
+  .validator((d: { registrar: Registrar; accountId?: string }) => d)
   .handler(async ({ data }) => {
     const result = await previewRegistrarDomains(data);
     await recordOperationLog({

@@ -9,7 +9,7 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(async (
 
 export const saveAdminSiteSettings = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((data: unknown) => data)
+  .validator((data: unknown) => data)
   .handler(async ({ data }) => {
     const settings = await saveSiteSettings(data);
     await recordOperationLog({

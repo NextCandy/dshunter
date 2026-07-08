@@ -25,7 +25,7 @@ export const listRegistrars = createServerFn({ method: "GET" })
 
 export const saveRegistrar = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((data: RegistrarCatalogPatch) => data)
+  .validator((data: RegistrarCatalogPatch) => data)
   .handler(async ({ data }) => {
     const row = await upsertRegistrarCatalogItem(data);
     await recordOperationLog({
@@ -49,7 +49,7 @@ export const saveRegistrar = createServerFn({ method: "POST" })
 
 export const deleteRegistrar = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((data: { id: string }) => data)
+  .validator((data: { id: string }) => data)
   .handler(async ({ data }) => {
     const row = await softDeleteRegistrarCatalogItem(data.id);
     await recordOperationLog({

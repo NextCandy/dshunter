@@ -6,5 +6,5 @@ export type { DomainDnsLookup, DnsRecordSet } from "./dns-lookup.server";
 
 export const lookupDomainDns = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { domain: string }) => d)
+  .validator((d: { domain: string }) => d)
   .handler(async ({ data }) => lookupDomainDnsRecords(data.domain));

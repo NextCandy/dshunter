@@ -3,7 +3,6 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { nitro } from "nitro/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import tsConfigPaths from "vite-tsconfig-paths";
 
 // Standard TanStack Start + Vite setup.
 //   - tanstackStart: file-based routing, SSR
@@ -11,7 +10,6 @@ import tsConfigPaths from "vite-tsconfig-paths";
 //                    Dockerfile sets node-server for NAS / Docker)
 //   - viteReact:     JSX / Fast Refresh (must come AFTER tanstackStart)
 //   - tailwindcss:   TailwindCSS v4 Vite plugin
-//   - tsConfigPaths: resolves the "@/*" -> "./src/*" alias from tsconfig.json
 export default defineConfig({
   plugins: [
     tanstackStart({
@@ -21,10 +19,11 @@ export default defineConfig({
     nitro(),
     viteReact(),
     tailwindcss(),
-    tsConfigPaths(),
   ],
   resolve: {
     // Avoid duplicate React copies in the bundle.
     dedupe: ["react", "react-dom"],
+    // Resolve the "@/*" -> "./src/*" alias from tsconfig.json via Vite.
+    tsconfigPaths: true,
   },
 });

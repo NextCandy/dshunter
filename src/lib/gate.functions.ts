@@ -14,7 +14,7 @@ export const checkGate = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const unlockSite = createServerFn({ method: "POST" })
-  .inputValidator((d: { email?: string; password: string }) => d)
+  .validator((d: { email?: string; password: string }) => d)
   .handler(async ({ data }) => {
     const expected = process.env.SITE_PASSWORD;
     if (!expected) throw new Error("SITE_PASSWORD not set");

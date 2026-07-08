@@ -44,7 +44,7 @@ function normRec(r: Record<string, unknown>): BackupRecord {
 
 export const exportZoneRecords = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { domains: string[] }) => d)
+  .validator((d: { domains: string[] }) => d)
   .handler(async ({ data }) => {
     const cf = await import("./registrars/cloudflare.server");
     const zones: BackupZone[] = [];
@@ -67,7 +67,7 @@ function keyOf(r: BackupRecord) {
 
 export const diffAgainstLive = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { backup: BackupZone[] }) => d)
+  .validator((d: { backup: BackupZone[] }) => d)
   .handler(async ({ data }) => {
     const cf = await import("./registrars/cloudflare.server");
     const results: {
@@ -128,7 +128,7 @@ export type ZonePlan = {
 
 export const planRestoreFromBackup = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator(
+  .validator(
     (d: { backup: BackupZone[]; strategy: "add-missing" | "overwrite" | "replace-all" }) => d,
   )
   .handler(async ({ data }): Promise<{ plans: ZonePlan[] }> => {
@@ -192,7 +192,7 @@ export const planRestoreFromBackup = createServerFn({ method: "POST" })
 
 export const applyRestorePlan = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { plans: ZonePlan[] }) => d)
+  .validator((d: { plans: ZonePlan[] }) => d)
   .handler(async ({ data }) => {
     const cf = await import("./registrars/cloudflare.server");
     const out: {

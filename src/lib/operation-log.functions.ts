@@ -10,7 +10,7 @@ export type {
 
 export const listOperationLogs = createServerFn({ method: "GET" })
   .middleware([requireGate])
-  .inputValidator(
+  .validator(
     (data: { category?: OperationLogCategory | "all"; limit?: number } | undefined) => data ?? {},
   )
   .handler(async ({ data }) => {

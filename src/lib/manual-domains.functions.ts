@@ -21,7 +21,7 @@ export const listManualDomains = createServerFn({ method: "GET" })
 
 export const addManualDomains = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { domains: string[] }) => d)
+  .validator((d: { domains: string[] }) => d)
   .handler(async ({ data }) => {
     const result = await addManual(data.domains);
     await recordOperationLog({
@@ -42,7 +42,7 @@ export const addManualDomains = createServerFn({ method: "POST" })
 
 export const updateManualDomain = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { id: string; patch: ManualDomainPatch }) => d)
+  .validator((d: { id: string; patch: ManualDomainPatch }) => d)
   .handler(async ({ data }) => {
     const row = await updateManual(data.id, data.patch);
     await recordOperationLog({
@@ -60,7 +60,7 @@ export const updateManualDomain = createServerFn({ method: "POST" })
 
 export const updateManualDomains = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { ids: string[]; patch: ManualDomainPatch }) => d)
+  .validator((d: { ids: string[]; patch: ManualDomainPatch }) => d)
   .handler(async ({ data }) => {
     const result = await updateManualBatch(data.ids, data.patch);
     await recordOperationLog({
@@ -81,7 +81,7 @@ export const updateManualDomains = createServerFn({ method: "POST" })
 
 export const deleteManualDomain = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { id: string }) => d)
+  .validator((d: { id: string }) => d)
   .handler(async ({ data }) => {
     const ok = await deleteManual(data.id);
     await recordOperationLog({
@@ -98,7 +98,7 @@ export const deleteManualDomain = createServerFn({ method: "POST" })
 
 export const deleteManualDomains = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { ids: string[] }) => d)
+  .validator((d: { ids: string[] }) => d)
   .handler(async ({ data }) => {
     const result = await deleteManualBatch(data.ids);
     await recordOperationLog({
@@ -119,7 +119,7 @@ export const listManualBackups = createServerFn({ method: "GET" })
 
 export const restoreManualBackup = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: { file: string }) => d)
+  .validator((d: { file: string }) => d)
   .handler(async ({ data }) => {
     const result = await restoreBackup(data.file);
     await recordOperationLog({

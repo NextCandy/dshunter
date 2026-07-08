@@ -16,7 +16,7 @@ export const listDnsTemplates = createServerFn({ method: "GET" })
 
 export const saveDnsTemplate = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((data: DnsTemplatePatch) => data)
+  .validator((data: DnsTemplatePatch) => data)
   .handler(async ({ data }) => {
     const row = await persistTemplate(data);
     await recordOperationLog({
@@ -34,7 +34,7 @@ export const saveDnsTemplate = createServerFn({ method: "POST" })
 
 export const deleteDnsTemplate = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((data: { id: string }) => data)
+  .validator((data: { id: string }) => data)
   .handler(async ({ data }) => {
     const row = await removeTemplate(data.id);
     await recordOperationLog({

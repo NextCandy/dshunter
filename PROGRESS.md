@@ -237,6 +237,24 @@ npm run build
   2. 提交同步 GitHub 并等待 CI。
   3. NAS SSH 凭据恢复后继续补 NAS 备份部署。
 
+## 2026-07-09 build warning 清理阶段
+
+- 已将 TanStack Start `createServerFn().inputValidator()` 全量迁移为 `.validator()`，覆盖 11 个 server function 文件，共 28 处调用。
+- 已移除 `vite-tsconfig-paths` 插件依赖，`vite.config.ts` 改用 Vite 8 原生 `resolve.tsconfigPaths: true` 解析 `@/*` 路径别名。
+- 依赖锁已通过 `bun install` 更新，仅移除 `vite-tsconfig-paths` 一个包。
+- 本地验证：
+  - `bun run lint` 通过，0 error / 0 warning。
+  - `bun run typecheck` 通过。
+  - `bun run build` 通过，构建输出不再出现 `inputValidator()` 或 `vite-tsconfig-paths` 弃用提示。
+  - `git diff --check` 通过。
+  - 敏感信息扫描无命中。
+- NAS 部署状态：
+  - 本阶段尚未部署到 NAS；当前 NAS SSH 密码/交互认证仍失败。
+  - 线上旧版本健康性保持：上一轮已确认 `https://dshunter.com` 200、未登录 admin 保存接口返回 401。
+  - NAS 凭据恢复后，应先备份 `/volume1/docker/dshunter` 与 `data`，再增量部署本阶段改动。
+- GitHub 状态：
+  - 待提交本阶段代码、同步 GitHub `main`、等待 GitHub Actions 通过。
+
 ## 接手机器操作
 
 ```powershell

@@ -12,7 +12,7 @@ export const getSecretsStatus = createServerFn({ method: "GET" })
 // 保存凭证：入参为 { 字段名: 值 }。非空 = 设置，空串 = 清除。仅白名单字段生效。
 export const saveSecrets = createServerFn({ method: "POST" })
   .middleware([requireGate])
-  .inputValidator((d: Record<string, unknown>) => {
+  .validator((d: Record<string, unknown>) => {
     const clean: Record<string, string> = {};
     for (const [key, v] of Object.entries(d)) {
       if (typeof v === "string") clean[key] = v;
