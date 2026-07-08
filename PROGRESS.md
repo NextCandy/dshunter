@@ -157,6 +157,26 @@ npm run build
   - 本地浏览器 `/settings` 页面身份正确、非空、无控制台错误。
   - 桌面视口展开 Spaceship 凭证面板后，“同步端点预检”区块和禁用态按钮正常显示，无横向溢出。
   - 390x844 移动视口展开同一面板后，“同步端点预检”区块正常显示，无横向溢出，控制台无错误。
+- GitHub 同步：
+  - 本地提交：`b685ec3 feat: 增加注册商同步预检`。
+  - GitHub `main` 最新提交：`5e289ff sync: update PROGRESS.md`。
+  - GitHub Actions docker workflow：`28919324984` 通过。
+- NAS 部署：
+  - 已部署到 `/volume1/docker/dshunter`，容器 `dshunter` 为 `healthy`。
+  - 本次备份：
+    - `/volume1/docker/_backups/dshunter/dshunter-20260708-132102.tar.gz`
+    - `/volume1/docker/_backups/dshunter/dshunter-data-20260708-132102.tar.gz`
+    - `/volume1/docker/_backups/dshunter/docker-compose-20260708-132102.yml`
+    - `/volume1/docker/_backups/dshunter/env-20260708-132102.bak`
+  - 部署后确认 `/volume1/docker/dshunter/data` 权限为容器用户可读写：`1000:1000`、模式 `700`。
+  - 未修改反代、frpc、frps 配置；`frpc` 仍保持运行。
+- 线上验证：
+  - `https://dshunter.com` 返回 200。
+  - `https://dshunter.com/api/site-settings` 返回站点配置 JSON。
+  - 未登录调用 `https://dshunter.com/api/admin/site-settings` 返回 401。
+  - 生产后台 `/settings` 页面身份正确、无控制台错误。
+  - 生产后台展开已配置的 Spaceship 凭证面板后，“同步端点预检”区块存在，按钮可用，无横向溢出。
+  - 本轮未点击生产“预检同步”按钮，避免在未指定目标注册商前对第三方注册商发起额外请求。
 
 下一阶段：
 
