@@ -15,7 +15,7 @@ import {
   listNotificationCenter,
   type NotificationCenterItem,
 } from "@/lib/notification-center.functions";
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "@/components/theme";
 import { cn } from "@/lib/utils";
 import { DeckMark } from "@/components/deck-mark";
 import { Button } from "@/components/ui/button";

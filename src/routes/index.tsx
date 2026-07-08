@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DeckMark } from "@/components/deck-mark";
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "@/components/theme";
 import { cn } from "@/lib/utils";
 import { listPublicDomainAssets } from "@/lib/public.functions";
 import { getSiteSettings } from "@/lib/site-settings.functions";

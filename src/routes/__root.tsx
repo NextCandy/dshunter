@@ -11,7 +11,8 @@ import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider, themeInitScript } from "@/components/theme-provider";
+import { themeInitScript } from "@/components/theme";
+import { ThemeProvider } from "@/components/theme-provider";
 import { DeckMark } from "@/components/deck-mark";
 
 function NotFoundComponent() {

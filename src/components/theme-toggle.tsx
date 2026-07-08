@@ -1,6 +1,6 @@
 import { Sun, Moon, Monitor } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useTheme, type Theme } from "./theme-provider";
+import { useTheme, type Theme } from "./theme";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();

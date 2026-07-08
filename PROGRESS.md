@@ -222,6 +222,21 @@ npm run build
   3. NAS 备份部署并线上复核。
   4. 后续单独拆分 `theme-provider` 与 shadcn UI 组件导出，把剩余 8 个 Fast Refresh warning 降到 0。
 
+## 2026-07-08 Fast Refresh lint 清零阶段
+
+- 已将剩余 8 个 Fast Refresh warning 清零：
+  - 主题上下文、`useTheme` 与首屏主题初始化脚本移动到 `src/components/theme.ts`，`theme-provider.tsx` 仅保留 `ThemeProvider` 组件导出。
+  - `buttonVariants`、`badgeVariants`、`toggleVariants`、`navigationMenuTriggerStyle`、`sidebarMenuButtonVariants` 分别移动到相邻 `*-variants.ts` 文件。
+  - `form.tsx` 和 `sidebar.tsx` 移除未被外部使用的 hook 导出，保留内部使用。
+  - 更新 alert-dialog、calendar、pagination、toggle-group、首页、后台壳和根路由的 import。
+- 本地验证：
+  - `npm run lint` 通过，0 error / 0 warning。
+  - `npm run typecheck` 通过。
+- 下一阶段：
+  1. 跑 `npm run build`、敏感信息扫描和浏览器 smoke。
+  2. 提交同步 GitHub 并等待 CI。
+  3. NAS SSH 凭据恢复后继续补 NAS 备份部署。
+
 ## 接手机器操作
 
 ```powershell
