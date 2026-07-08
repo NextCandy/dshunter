@@ -59,6 +59,8 @@
   - “凭证已配”：必填凭证字段已加密保存；
   - “同步可用”：已接入真实自动同步适配器。
 - 注册商来源列表每行显示凭证状态和同步状态，避免把“可保存凭证”和“可自动同步”混为一类。
+- 公开首页统计卡移动端改为单列布局，平板两列、桌面四列，避免 390px 视口下指标内容被视觉裁切。
+- 移除公开首页 hero 中的模糊装饰光斑，保持背景更克制。
 
 ## 验证记录
 
@@ -70,13 +72,20 @@
 - `dshunter` 容器 healthy。
 - `https://dshunter.com` 首页 200。
 - `/api/site-settings` 正常。
+- 未登录调用 `/api/admin/site-settings` 返回 401。
 - 桌面和手机浏览器验证过首页、登录页、站点设置页、解析记录页。
+- 2026-07-08 阶段部署备份：
+  - `/volume1/docker/_backups/dshunter/dshunter-20260708-083356.tar.gz`
+  - `/volume1/docker/_backups/dshunter/dshunter-data-20260708-083356.tar.gz`
+  - `/volume1/docker/_backups/dshunter/docker-compose-20260708-083356.yml`
+  - `/volume1/docker/_backups/dshunter/env-20260708-083356.bak`
+- 本轮线上后台自动化登录尚未拿到成功跳转证据；需后续单独复核登录自动化或手动后台登录。
 
 下一阶段继续开发前建议重新运行：
 
 ```powershell
-npx prettier --write src/lib/secrets.server.ts src/lib/secrets.functions.ts src/routes/_app.settings.tsx PROGRESS.md
-npx eslint src/lib/secrets.server.ts src/lib/secrets.functions.ts src/routes/_app.settings.tsx
+npx prettier --write src/lib/secrets.server.ts src/lib/secrets.functions.ts src/routes/_app.settings.tsx src/routes/index.tsx PROGRESS.md
+npx eslint src/lib/secrets.server.ts src/lib/secrets.functions.ts src/routes/_app.settings.tsx src/routes/index.tsx
 npm run typecheck
 npm run build
 ```
@@ -84,9 +93,10 @@ npm run build
 ## 下一步建议
 
 1. 为自定义注册商增加真实同步适配器接口。
-2. 清理全仓历史 CRLF/Prettier 问题，使 `npm run lint` 可以作为全量门禁。
-3. 继续完善移动端后台表单和域名列表密集信息展示。
-4. 每完成一个阶段后继续执行：本地验证 -> GitHub 提交推送 -> CI -> NAS 备份部署 -> 线上验证。
+2. 单独复核线上后台登录自动化，并确认浏览器后台设置页可登录进入。
+3. 清理全仓历史 CRLF/Prettier 问题，使 `npm run lint` 可以作为全量门禁。
+4. 继续完善移动端后台表单和域名列表密集信息展示。
+5. 每完成一个阶段后继续执行：本地验证 -> GitHub 提交推送 -> CI -> NAS 备份部署 -> 线上验证。
 
 ## 接手机器操作
 

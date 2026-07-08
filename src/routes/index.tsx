@@ -103,8 +103,6 @@ function PublicHome() {
       {/* ---------- Hero ---------- */}
       <section className="relative overflow-hidden border-b border-border/60">
         <div className="pointer-events-none absolute inset-0 bg-blueprint-fade opacity-70" />
-        <div className="pointer-events-none absolute -top-40 left-1/2 h-96 w-[46rem] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
-
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <header className="flex items-center justify-between py-4">
             <Link to="/" className="flex items-center gap-2.5">
@@ -136,10 +134,10 @@ function PublicHome() {
               <span className="signal signal-success signal-pulse" />
               Domain Asset Registry
             </div>
-            <h1 className="mt-5 max-w-2xl font-display text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl md:text-6xl">
+            <h1 className="mt-5 max-w-full break-words font-display text-4xl font-bold leading-[1.08] tracking-tight sm:max-w-2xl sm:text-5xl md:text-6xl">
               {settings.siteName}
             </h1>
-            <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">
+            <p className="mt-5 max-w-full break-words text-base leading-7 text-muted-foreground sm:max-w-xl">
               {settings.heroDescription || settings.siteDescription}
             </p>
             {settings.announcement && (
@@ -148,7 +146,7 @@ function PublicHome() {
               </div>
             )}
 
-            <div className="mt-10 grid max-w-3xl grid-cols-2 gap-px overflow-hidden rounded-xl border border-border/60 bg-border/60 sm:grid-cols-4">
+            <div className="mt-10 grid max-w-xl grid-cols-1 gap-px overflow-hidden rounded-xl border border-border/60 bg-border/60 sm:max-w-3xl sm:grid-cols-2 lg:grid-cols-4">
               {stats.map((s) => (
                 <div key={s.label} className="bg-card p-4">
                   <div className="flex items-center gap-1.5">
