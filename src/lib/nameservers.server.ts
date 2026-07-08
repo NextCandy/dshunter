@@ -83,7 +83,11 @@ export async function resolveDomainNameservers(
       nsStatus: classifyNameservers(nameservers),
       nsProvider: identifyNsProvider(nameservers),
     };
-  } catch (e: any) {
+  } catch (rawError: unknown) {
+    const e =
+      rawError && typeof rawError === "object"
+        ? (rawError as { code?: string; message?: string })
+        : { message: String(rawError || "") };
     return {
       domain,
       nameservers: [],

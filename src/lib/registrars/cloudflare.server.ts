@@ -3,13 +3,56 @@ import { getSecret } from "../secrets.server";
 
 const CF_BASE = "https://api.cloudflare.com/client/v4";
 
-export type CFResp<T = any> = {
+type CFResultInfo = {
+  total_pages?: number;
+  [key: string]: unknown;
+};
+
+export type CFResp<T = unknown> = {
   success: boolean;
   errors?: { code: number; message: string }[];
-  messages?: any[];
+  messages?: unknown[];
   result: T;
-  result_info?: any;
+  result_info?: CFResultInfo;
 };
+
+export type CloudflareAccount = {
+  id: string;
+  name: string;
+};
+
+export type CloudflareZone = {
+  id: string;
+  name: string;
+  status: string;
+  name_servers: string[];
+  original_name_servers?: string[];
+  account?: CloudflareAccount;
+};
+
+export type CloudflareDnsRecord = {
+  id: string;
+  type: string;
+  name: string;
+  content: string;
+  ttl?: number;
+  proxied?: boolean;
+  priority?: number;
+  modified_on?: string;
+};
+
+export type CloudflareDnsRecordPayload = {
+  type: string;
+  name: string;
+  content: string;
+  ttl?: number;
+  proxied?: boolean;
+  priority?: number;
+};
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error || "网络错误");
+}
 
 export async function cfToken(): Promise<string> {
   const t = await getSecret("CLOUDFLARE_API_TOKEN");
@@ -17,7 +60,7 @@ export async function cfToken(): Promise<string> {
   return t;
 }
 
-export async function cf<T = any>(path: string, init: RequestInit = {}): Promise<CFResp<T>> {
+export async function cf<T = unknown>(path: string, init: RequestInit = {}): Promise<CFResp<T>> {
   const token = await cfToken();
   let res: Response;
   try {
@@ -29,11 +72,11 @@ export async function cf<T = any>(path: string, init: RequestInit = {}): Promise
         ...(init.headers || {}),
       },
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     // 网络层失败（DNS/超时/断网），构造统一错误结构，避免上层拿到 undefined
     return {
       success: false,
-      errors: [{ code: -1, message: `无法连接 Cloudflare API：${e?.message || "网络错误"}` }],
+      errors: [{ code: -1, message: `无法连接 Cloudflare API：${errorMessage(e)}` }],
       result: undefined as T,
     };
   }
@@ -98,16 +141,16 @@ export async function cfVerifyToken(): Promise<"active" | "invalid" | "unconfigu
 }
 
 export async function cfListAccounts() {
-  const r = await cf<any[]>("/accounts?per_page=50");
+  const r = await cf<CloudflareAccount[]>("/accounts?per_page=50");
   if (!r.success) throw new Error(cfErr(r));
   return r.result.map((a) => ({ id: a.id, name: a.name }));
 }
 
 export async function cfListZones() {
-  const all: any[] = [];
+  const all: CloudflareZone[] = [];
   let page = 1;
   while (true) {
-    const r = await cf<any[]>(`/zones?per_page=50&page=${page}`);
+    const r = await cf<CloudflareZone[]>(`/zones?per_page=50&page=${page}`);
     if (!r.success) throw new Error(cfErr(r));
     all.push(...r.result);
     const total = r.result_info?.total_pages ?? 1;
@@ -125,13 +168,13 @@ export async function cfListZones() {
 }
 
 export async function cfFindZoneByName(name: string) {
-  const r = await cf<any[]>(`/zones?name=${encodeURIComponent(name)}`);
+  const r = await cf<CloudflareZone[]>(`/zones?name=${encodeURIComponent(name)}`);
   if (!r.success) throw new Error(cfErr(r));
   return r.result[0] || null;
 }
 
 export async function cfCreateZone(name: string, accountId: string) {
-  const r = await cf<any>("/zones", {
+  const r = await cf<CloudflareZone>("/zones", {
     method: "POST",
     body: JSON.stringify({ name, account: { id: accountId }, type: "full" }),
   });
@@ -143,10 +186,12 @@ export async function cfActivationCheck(zoneId: string) {
 }
 
 export async function cfListDNS(zoneId: string) {
-  const all: any[] = [];
+  const all: CloudflareDnsRecord[] = [];
   let page = 1;
   while (true) {
-    const r = await cf<any[]>(`/zones/${zoneId}/dns_records?per_page=100&page=${page}`);
+    const r = await cf<CloudflareDnsRecord[]>(
+      `/zones/${zoneId}/dns_records?per_page=100&page=${page}`,
+    );
     if (!r.success) throw new Error(cfErr(r));
     all.push(...r.result);
     const total = r.result_info?.total_pages ?? 1;
@@ -156,12 +201,18 @@ export async function cfListDNS(zoneId: string) {
   return all;
 }
 
-export async function cfCreateDNS(zoneId: string, rec: any) {
-  return cf(`/zones/${zoneId}/dns_records`, { method: "POST", body: JSON.stringify(rec) });
+export async function cfCreateDNS(zoneId: string, rec: CloudflareDnsRecordPayload) {
+  return cf<CloudflareDnsRecord>(`/zones/${zoneId}/dns_records`, {
+    method: "POST",
+    body: JSON.stringify(rec),
+  });
 }
 
-export async function cfUpdateDNS(zoneId: string, id: string, rec: any) {
-  return cf(`/zones/${zoneId}/dns_records/${id}`, { method: "PUT", body: JSON.stringify(rec) });
+export async function cfUpdateDNS(zoneId: string, id: string, rec: CloudflareDnsRecordPayload) {
+  return cf<CloudflareDnsRecord>(`/zones/${zoneId}/dns_records/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(rec),
+  });
 }
 
 export async function cfDeleteDNS(zoneId: string, id: string) {

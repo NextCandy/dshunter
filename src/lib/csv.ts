@@ -90,7 +90,7 @@ export function parseAndValidateCsv(text: string): CsvParseResult {
   for (let i = 1; i < lines.length; i++) {
     const rowNum = i + 1;
     const cols = splitCsvLine(lines[i]);
-    const raw: any = {};
+    const raw: Record<string, string> = {};
     headers.forEach((h, idx) => (raw[h] = cols[idx] ?? ""));
     const parsed = {
       domain: (raw.domain || "").toLowerCase().trim(),
@@ -142,12 +142,12 @@ export function toCsv(
 ): string {
   const header = "domain,type,name,content,ttl,proxied,priority";
   const rows = records.map((r) => {
-    const esc = (v: any) => {
+    const esc = (v: unknown) => {
       const s = v == null ? "" : String(v);
       return /[,"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     return [
-      esc((r as any).domain ?? ""),
+      esc(r.domain ?? ""),
       esc(r.type),
       esc(r.name),
       esc(r.content),

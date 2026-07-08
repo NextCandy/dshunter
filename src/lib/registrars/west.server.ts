@@ -5,6 +5,26 @@ import { getSecret } from "../secrets.server";
 
 const BASE = "https://api.west.cn/api/v2";
 
+type WestDomainItem = {
+  domain?: string;
+  Domain?: string;
+  name?: string;
+};
+
+type WestResponse<TData = unknown> = {
+  result?: number;
+  code?: number;
+  msg?: string;
+  data?: TData;
+};
+
+type WestDomainListData =
+  | WestDomainItem[]
+  | {
+      items?: WestDomainItem[];
+      total?: number;
+    };
+
 async function creds() {
   const username = await getSecret("WEST_USERNAME");
   const password = await getSecret("WEST_API_PASSWORD");
@@ -28,7 +48,7 @@ async function westCall(path: string, params: Record<string, string> = {}) {
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`West ${res.status}: ${text.slice(0, 200)}`);
-  const j = JSON.parse(text);
+  const j = JSON.parse(text) as WestResponse;
   if (j?.result !== 200 && j?.code !== 200) {
     throw new Error(`West ${j?.result || j?.code}: ${j?.msg || "unknown"}`);
   }
@@ -40,17 +60,17 @@ export async function westListDomains(): Promise<string[]> {
   let page = 1;
   const size = 100;
   while (true) {
-    const j = await westCall("/domain/", {
+    const j = (await westCall("/domain/", {
       act: "getdomains",
       pageno: String(page),
       limit: String(size),
-    });
-    const items: any[] = j?.data?.items || j?.data || [];
+    })) as WestResponse<WestDomainListData>;
+    const items = Array.isArray(j.data) ? j.data : j.data?.items || [];
     for (const it of items) {
       const n = it.domain || it.Domain || it.name;
       if (n) all.push(String(n).toLowerCase());
     }
-    const total = Number(j?.data?.total || items.length);
+    const total = Number(Array.isArray(j.data) ? items.length : j.data?.total || items.length);
     if (page * size >= total || items.length === 0) break;
     page++;
     if (page > 50) break;

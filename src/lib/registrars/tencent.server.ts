@@ -8,6 +8,27 @@ const SERVICE = "domain";
 const VERSION = "2018-08-08";
 const REGION = "";
 
+type TencentPayload = Record<string, unknown>;
+
+type TencentDomainItem = {
+  DomainName?: string;
+  Domain?: string;
+};
+
+type TencentDomainListResponse = {
+  DomainSet?: TencentDomainItem[];
+  TotalCount?: number;
+};
+
+type TencentApiResponse<T> = {
+  Response: T & {
+    Error?: {
+      Code: string;
+      Message: string;
+    };
+  };
+};
+
 async function creds() {
   const id = await getSecret("TENCENT_SECRET_ID");
   const key = await getSecret("TENCENT_SECRET_KEY");
@@ -22,7 +43,7 @@ function hmac(k: Buffer | string, s: string) {
   return createHmac("sha256", k).update(s, "utf8").digest();
 }
 
-async function tcCall(action: string, payload: Record<string, any>): Promise<any> {
+async function tcCall<T>(action: string, payload: TencentPayload): Promise<T> {
   const { id, key } = await creds();
   const body = JSON.stringify(payload);
   const ts = Math.floor(Date.now() / 1000);
@@ -53,7 +74,7 @@ async function tcCall(action: string, payload: Record<string, any>): Promise<any
   const res = await fetch(`https://${HOST}`, { method: "POST", headers, body });
   const text = await res.text();
   if (!res.ok) throw new Error(`Tencent ${res.status}: ${text.slice(0, 200)}`);
-  const j = JSON.parse(text);
+  const j = JSON.parse(text) as TencentApiResponse<T>;
   if (j?.Response?.Error)
     throw new Error(`Tencent ${j.Response.Error.Code}: ${j.Response.Error.Message}`);
   return j.Response;
@@ -64,8 +85,11 @@ export async function tencentListDomains(): Promise<string[]> {
   let offset = 0;
   const limit = 100;
   while (true) {
-    const r = await tcCall("DescribeDomainNameList", { Offset: offset, Limit: limit });
-    const items: any[] = r?.DomainSet || [];
+    const r = await tcCall<TencentDomainListResponse>("DescribeDomainNameList", {
+      Offset: offset,
+      Limit: limit,
+    });
+    const items = r.DomainSet || [];
     for (const it of items) {
       const n = it.DomainName || it.Domain;
       if (n) all.push(String(n).toLowerCase());

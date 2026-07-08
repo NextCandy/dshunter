@@ -205,6 +205,23 @@ npm run build
 1. 将 lint 门禁阶段提交并同步到 GitHub、等待 CI，再备份部署到 NAS 实际项目并线上复核。
 2. 后续可分批把 56 个 lint warning 继续降到 0，优先收紧注册商 API 响应类型。
 
+## 2026-07-08 注册商 API 类型收紧阶段
+
+- 已将第三方注册商与 Cloudflare API 响应里的显式 `any` 批量收紧：
+  - Cloudflare helper 新增 `CFResp`、`CloudflareZone`、`CloudflareDnsRecord`、`CloudflareDnsRecordPayload` 等轻量类型。
+  - Aliyun、Tencent、Porkbun、Dynadot、Spaceship、West.cn、Cloudflare Registrar 的列表/错误响应改为最小响应类型。
+  - DNS 记录创建、更新、批量 upsert 与删除流程改为使用具体 payload/record 类型。
+  - CSV 导出、NS 查询错误处理改为 `unknown`/结构化对象，不再使用裸 `any`。
+  - `getCfHealth` 的错误分支补回明确返回值，避免 Cloudflare Token 有效但权限不足时返回空结果。
+- 本地验证：
+  - `npm run lint` 通过；warning 从 56 降到 8，剩余均为组件 Fast Refresh 导出提示，`@typescript-eslint/no-explicit-any` 已清零。
+  - `npm run typecheck` 通过。
+- 下一阶段：
+  1. 跑完整 `npm run build` 与敏感信息扫描。
+  2. 提交并同步 GitHub、等待 CI。
+  3. NAS 备份部署并线上复核。
+  4. 后续单独拆分 `theme-provider` 与 shadcn UI 组件导出，把剩余 8 个 Fast Refresh warning 降到 0。
+
 ## 接手机器操作
 
 ```powershell

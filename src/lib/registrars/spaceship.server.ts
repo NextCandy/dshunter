@@ -3,6 +3,18 @@ import { getSecret } from "../secrets.server";
 
 const BASE = "https://spaceship.dev/api/v1";
 
+type SpaceshipDomainItem = {
+  name?: string;
+  domain?: string;
+  domainName?: string;
+};
+
+type SpaceshipListResponse = {
+  items?: SpaceshipDomainItem[];
+  domains?: SpaceshipDomainItem[];
+  data?: SpaceshipDomainItem[];
+};
+
 async function headers() {
   const key = await getSecret("SPACESHIP_API_KEY");
   const secret = await getSecret("SPACESHIP_API_SECRET");
@@ -23,8 +35,8 @@ export async function spaceshipListDomains(): Promise<string[]> {
       headers: await headers(),
     });
     if (!res.ok) throw new Error(`Spaceship ${res.status}: ${await res.text()}`);
-    const j: any = await res.json();
-    const items: any[] = j.items || j.domains || j.data || [];
+    const j = (await res.json()) as SpaceshipListResponse;
+    const items = j.items || j.domains || j.data || [];
     for (const it of items) {
       const name = it.name || it.domain || it.domainName;
       if (name) all.push(String(name).toLowerCase());

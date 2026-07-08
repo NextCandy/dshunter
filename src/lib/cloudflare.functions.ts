@@ -1,8 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireGate } from "./auth-middleware";
+import type {
+  CloudflareDnsRecord,
+  CloudflareDnsRecordPayload,
+  CloudflareZone,
+} from "./registrars/cloudflare.server";
 
 async function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error || "未知错误");
 }
 
 export const listAccounts = createServerFn({ method: "GET" })
@@ -34,9 +43,8 @@ export const getCfHealth = createServerFn({ method: "GET" })
         activeZones: zones.filter((z) => z.status === "active").length,
         error: null as string | null,
       };
-    } catch (e: any) {
-      // Token 有效但缺 Zone:Read 等权限
-      return { tokenStatus, zoneCount: null, activeZones: null, error: String(e?.message || e) };
+    } catch (e: unknown) {
+      return { tokenStatus, zoneCount: null, activeZones: null, error: errorMessage(e) };
     }
   });
 
@@ -141,9 +149,9 @@ export const bindDomains = createServerFn({ method: "POST" })
               await cfRegSetNS(data.cfRegAccountId, domain, r.nameServers);
             }
             r.nsUpdate = "ok";
-          } catch (e: any) {
+          } catch (e: unknown) {
             r.nsUpdate = "error";
-            r.error = (r.error ? r.error + " | " : "") + `NS: ${e.message}`;
+            r.error = (r.error ? r.error + " | " : "") + `NS: ${errorMessage(e)}`;
           }
         }
 
@@ -153,13 +161,13 @@ export const bindDomains = createServerFn({ method: "POST" })
             const a = await cf.cfActivationCheck(r.zoneId);
             r.activation = a.success ? "ok" : "error";
             if (!a.success) r.error = (r.error ? r.error + " | " : "") + cf.cfErr(a);
-          } catch (e: any) {
+          } catch (e: unknown) {
             r.activation = "error";
-            r.error = (r.error ? r.error + " | " : "") + `activation: ${e.message}`;
+            r.error = (r.error ? r.error + " | " : "") + `activation: ${errorMessage(e)}`;
           }
         }
-      } catch (e: any) {
-        r.error = e.message;
+      } catch (e: unknown) {
+        r.error = errorMessage(e);
       }
       results.push(r);
       await sleep(120);
@@ -248,11 +256,11 @@ export const listDnsRecords = createServerFn({ method: "POST" })
       } satisfies DnsListError;
     }
     const cf = await import("./registrars/cloudflare.server");
-    let zone: any;
+    let zone: CloudflareZone | null;
     try {
       zone = await cf.cfFindZoneByName(domain);
-    } catch (e: any) {
-      return classifyCfError(String(e?.message || e));
+    } catch (e: unknown) {
+      return classifyCfError(errorMessage(e));
     }
     if (!zone) {
       return {
@@ -271,7 +279,7 @@ export const listDnsRecords = createServerFn({ method: "POST" })
           status: zone.status,
           name_servers: zone.name_servers,
         },
-        records: records.map((r: any) => ({
+        records: records.map((r) => ({
           id: r.id,
           zoneId: zone.id,
           domain,
@@ -284,8 +292,8 @@ export const listDnsRecords = createServerFn({ method: "POST" })
           modified_on: r.modified_on,
         })),
       };
-    } catch (e: any) {
-      return classifyCfError(String(e?.message || e));
+    } catch (e: unknown) {
+      return classifyCfError(errorMessage(e));
     }
   });
 
@@ -311,7 +319,7 @@ export const saveDnsRecord = createServerFn({ method: "POST" })
     const zone = await cf.cfFindZoneByName(domain);
     if (!zone) throw new Error(`Cloudflare Zone 不存在：${domain}`);
 
-    const payload: any = {
+    const payload: CloudflareDnsRecordPayload = {
       type: data.type,
       name: fullName(domain, data.name),
       content: data.content.trim(),
@@ -364,7 +372,7 @@ export const bulkAddRecords = createServerFn({ method: "POST" })
     }[] = [];
 
     // Preload existing records per zone (for upsert)
-    const existingByZone = new Map<string, any[]>();
+    const existingByZone = new Map<string, CloudflareDnsRecord[]>();
     if (data.upsert) {
       for (const [, zid] of zoneMap) {
         existingByZone.set(zid, await cf.cfListDNS(zid));
@@ -377,7 +385,7 @@ export const bulkAddRecords = createServerFn({ method: "POST" })
         results.push({ ...rec, status: "no-zone" });
         continue;
       }
-      const payload: any = {
+      const payload: CloudflareDnsRecordPayload = {
         type: rec.type,
         name: fullName(rec.domain, rec.name),
         content: rec.content,
@@ -416,8 +424,8 @@ export const bulkAddRecords = createServerFn({ method: "POST" })
           status: r.success ? "created" : "error",
           error: r.success ? undefined : cf.cfErr(r),
         });
-      } catch (e: any) {
-        results.push({ ...rec, status: "error", error: e.message });
+      } catch (e: unknown) {
+        results.push({ ...rec, status: "error", error: errorMessage(e) });
       }
       await sleep(60);
     }
@@ -488,15 +496,15 @@ export const executeDeleteRecords = createServerFn({ method: "POST" })
           name: it.name,
           type: it.type,
           status: r.success ? "ok" : "error",
-          error: r.success ? undefined : cf.cfErr(r as any),
+          error: r.success ? undefined : cf.cfErr(r),
         });
-      } catch (e: any) {
+      } catch (e: unknown) {
         results.push({
           domain: it.domain,
           name: it.name,
           type: it.type,
           status: "error",
-          error: e.message,
+          error: errorMessage(e),
         });
       }
       await sleep(60);

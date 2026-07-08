@@ -4,6 +4,32 @@ import { getSecret } from "../secrets.server";
 
 const BASE = "https://api.dynadot.com/api3.json";
 
+type DynadotDomainItem = {
+  name?: string;
+  Name?: string;
+  domain?: string;
+  Domain?: string;
+};
+
+type DynadotListResponse = {
+  ListDomainInfoResponse?: {
+    MainDomains?: DynadotDomainItem[];
+    DomainInfoList?: DynadotDomainItem[];
+  };
+  list_domain_info_response?: {
+    domain_info_list?: DynadotDomainItem[];
+  };
+};
+
+type DynadotSetNsResponse = {
+  SetNsResponse?: {
+    ResponseCode?: number | string;
+  };
+  set_ns_response?: {
+    response_code?: number | string;
+  };
+};
+
 async function key(): Promise<string> {
   const k = await getSecret("DYNADOT_API_KEY");
   if (!k) throw new Error("DYNADOT_API_KEY（Dynadot API 生产密钥）未配置");
@@ -14,7 +40,7 @@ export async function dynadotListDomains(): Promise<string[]> {
   const url = `${BASE}?key=${encodeURIComponent(await key())}&command=list_domain`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Dynadot ${res.status}`);
-  const j: any = await res.json();
+  const j = (await res.json()) as DynadotListResponse;
   const list =
     j?.ListDomainInfoResponse?.MainDomains ||
     j?.ListDomainInfoResponse?.DomainInfoList ||
@@ -37,7 +63,7 @@ export async function dynadotSetNS(domain: string, ns: string[]): Promise<void> 
   ns.forEach((n, i) => params.append(`ns${i}`, n));
   const res = await fetch(`${BASE}?${params.toString()}`);
   if (!res.ok) throw new Error(`Dynadot setNS ${res.status}`);
-  const j: any = await res.json();
+  const j = (await res.json()) as DynadotSetNsResponse;
   const status = j?.SetNsResponse?.ResponseCode ?? j?.set_ns_response?.response_code;
   if (status !== undefined && Number(status) !== 0) {
     throw new Error(`Dynadot setNS failed: ${JSON.stringify(j)}`);

@@ -3,6 +3,22 @@ import { getSecret } from "../secrets.server";
 
 const BASE = "https://api.porkbun.com/api/json/v3";
 
+type PorkbunResponse = {
+  status?: string;
+  code?: string | number;
+  message?: string;
+};
+
+type PorkbunDomain = {
+  domain?: string;
+  name?: string;
+  domainName?: string;
+};
+
+type PorkbunListResponse = PorkbunResponse & {
+  domains?: PorkbunDomain[];
+};
+
 async function creds() {
   const apiKey = await getSecret("PORKBUN_API_KEY");
   const secretApiKey = await getSecret("PORKBUN_SECRET_API_KEY");
@@ -18,7 +34,7 @@ async function authHeaders() {
   };
 }
 
-function porkbunError(prefix: string, body: any, status?: number): Error {
+function porkbunError(prefix: string, body: PorkbunResponse, status?: number): Error {
   const code = body?.code ? ` ${body.code}` : "";
   const message = body?.message ? `: ${body.message}` : "";
   return new Error(`${prefix}${status ? ` ${status}` : ""}${code}${message}`);
@@ -34,10 +50,10 @@ export async function porkbunListDomains(): Promise<string[]> {
     const res = await fetch(`${BASE}/domain/listAll?${params.toString()}`, {
       headers: await authHeaders(),
     });
-    const j: any = await res.json().catch(() => ({}));
+    const j = (await res.json().catch(() => ({}))) as PorkbunListResponse;
     if (!res.ok || j?.status === "ERROR") throw porkbunError("Porkbun listAll", j, res.status);
 
-    const items: any[] = Array.isArray(j?.domains) ? j.domains : [];
+    const items = Array.isArray(j.domains) ? j.domains : [];
     for (const it of items) {
       const name = it?.domain || it?.name || it?.domainName;
       if (name) out.push(String(name).toLowerCase());
@@ -62,6 +78,6 @@ export async function porkbunSetNS(domain: string, ns: string[]): Promise<void> 
       ns,
     }),
   });
-  const j: any = await res.json().catch(() => ({}));
+  const j = (await res.json().catch(() => ({}))) as PorkbunResponse;
   if (!res.ok || j?.status === "ERROR") throw porkbunError("Porkbun updateNs", j, res.status);
 }

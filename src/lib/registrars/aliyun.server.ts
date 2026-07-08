@@ -6,6 +6,17 @@ import { getSecret } from "../secrets.server";
 const ENDPOINT = "domain.aliyuncs.com";
 const VERSION = "2018-01-29";
 
+type AliyunDomainItem = {
+  DomainName?: string;
+  domainName?: string;
+};
+
+type AliyunDomainListResponse = {
+  Data?: { Domain?: AliyunDomainItem[] } | AliyunDomainItem[];
+  TotalItemNum?: number;
+  totalItemNum?: number;
+};
+
 async function creds() {
   const id = await getSecret("ALIYUN_ACCESS_KEY_ID");
   const secret = await getSecret("ALIYUN_ACCESS_KEY_SECRET");
@@ -21,7 +32,7 @@ function sha256Hex(s: string | Buffer) {
   return createHash("sha256").update(s).digest("hex");
 }
 
-async function acsCall(action: string, params: Record<string, string>): Promise<any> {
+async function acsCall<T>(action: string, params: Record<string, string>): Promise<T> {
   const { id, secret } = await creds();
   const now = new Date();
   const iso = now.toISOString().replace(/\.\d{3}Z$/, "Z");
@@ -61,7 +72,7 @@ async function acsCall(action: string, params: Record<string, string>): Promise<
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`Aliyun ${res.status}: ${text.slice(0, 200)}`);
-  return JSON.parse(text);
+  return JSON.parse(text) as T;
 }
 
 export async function aliyunListDomains(): Promise<string[]> {
@@ -69,11 +80,11 @@ export async function aliyunListDomains(): Promise<string[]> {
   let page = 1;
   const size = 100;
   while (true) {
-    const j = await acsCall("QueryDomainList", {
+    const j = await acsCall<AliyunDomainListResponse>("QueryDomainList", {
       PageNum: String(page),
       PageSize: String(size),
     });
-    const items: any[] = j?.Data?.Domain || j?.Data || [];
+    const items = Array.isArray(j.Data) ? j.Data : j.Data?.Domain || [];
     for (const it of items) {
       const name = it.DomainName || it.domainName;
       if (name) all.push(String(name).toLowerCase());
