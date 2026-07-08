@@ -82,6 +82,7 @@ function SettingsPage() {
   const activeRows = rows.filter((row) => row.active);
   const presence = secrets.data?.presence ?? {};
   const configuredCount = activeRows.filter((row) => isConfigured(row, presence)).length;
+  const syncAvailableCount = activeRows.filter((row) => row.supportsSync).length;
 
   const refreshAll = async () => {
     await Promise.all([secrets.refetch(), registrars.refetch()]);
@@ -96,15 +97,21 @@ function SettingsPage() {
             管理主题、注册商来源、API 凭证与后续同步策略。
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-sm">
+        <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
           <SettingMetric label="来源" value={activeRows.length} />
-          <SettingMetric label="已配置" value={configuredCount} />
+          <SettingMetric label="凭证已配" value={configuredCount} />
+          <SettingMetric label="同步可用" value={syncAvailableCount} />
           <SettingMetric label="停用" value={rows.length - activeRows.length} />
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <RegistrarManager rows={rows} loading={registrars.isLoading} onChanged={refreshAll} />
+        <RegistrarManager
+          rows={rows}
+          presence={presence as Record<string, boolean>}
+          loading={registrars.isLoading}
+          onChanged={refreshAll}
+        />
 
         <div className="space-y-4">
           <Card className="p-5">
@@ -152,10 +159,12 @@ function SettingMetric({ label, value }: { label: string; value: number }) {
 
 function RegistrarManager({
   rows,
+  presence,
   loading,
   onChanged,
 }: {
   rows: RegistrarCatalogItem[];
+  presence: Record<string, boolean>;
   loading: boolean;
   onChanged: () => Promise<void>;
 }) {
@@ -201,7 +210,7 @@ function RegistrarManager({
           </div>
         )}
         {rows.map((row) => (
-          <RegistrarRow key={row.id} row={row} onEdit={() => setEditing(row)} />
+          <RegistrarRow key={row.id} row={row} presence={presence} onEdit={() => setEditing(row)} />
         ))}
       </div>
 
@@ -219,7 +228,18 @@ function RegistrarManager({
   );
 }
 
-function RegistrarRow({ row, onEdit }: { row: RegistrarCatalogItem; onEdit: () => void }) {
+function RegistrarRow({
+  row,
+  presence,
+  onEdit,
+}: {
+  row: RegistrarCatalogItem;
+  presence: Record<string, boolean>;
+  onEdit: () => void;
+}) {
+  const configured = isConfigured(row, presence);
+  const hasRequiredCredentials = row.credentialFields.some((field) => !field.optional);
+
   return (
     <div className={cn("grid gap-4 p-4 md:grid-cols-[1fr_auto]", !row.active && "opacity-60")}>
       <div className="min-w-0">
@@ -234,7 +254,14 @@ function RegistrarRow({ row, onEdit }: { row: RegistrarCatalogItem; onEdit: () =
             {row.active ? "启用" : "已停用"}
           </Badge>
           {row.builtin && <Badge variant="outline">内置</Badge>}
-          {!row.supportsSync && <Badge variant="outline">待接入同步</Badge>}
+          {hasRequiredCredentials && (
+            <Badge variant={configured ? "secondary" : "outline"}>
+              {configured ? "凭证已配置" : "缺少凭证"}
+            </Badge>
+          )}
+          <Badge variant={row.supportsSync ? "secondary" : "outline"}>
+            {row.supportsSync ? "自动同步可用" : "待接入同步"}
+          </Badge>
         </div>
         <div className="mt-1 text-xs text-muted-foreground">
           {row.shortName} · {STRATEGY_LABELS[row.syncStrategy]} · {row.credentialFields.length}{" "}
