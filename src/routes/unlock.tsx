@@ -1,10 +1,11 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { unlockSite } from "@/lib/gate.functions";
 import { listPublicDomainAssets } from "@/lib/public.functions";
+import { getSiteSettings } from "@/lib/site-settings.functions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { DeckMark } from "@/components/deck-mark";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AtSign, KeyRound, Loader2, ShieldCheck } from "lucide-react";
+import type { SiteSettings } from "@/lib/site-settings.server";
 
 export const Route = createFileRoute("/unlock")({
   head: () => ({
@@ -27,9 +29,15 @@ function UnlockPage() {
   const router = useRouter();
   const unlock = useServerFn(unlockSite);
   const listAssets = useServerFn(listPublicDomainAssets);
+  const getSettings = useServerFn(getSiteSettings);
   const assetsQuery = useQuery({
     queryKey: ["public-domain-assets", "unlock"],
     queryFn: () => listAssets(),
+    staleTime: 60_000,
+  });
+  const settingsQuery = useQuery({
+    queryKey: ["site-settings", "unlock"],
+    queryFn: () => getSettings(),
     staleTime: 60_000,
   });
   const [email, setEmail] = useState("");
@@ -38,6 +46,7 @@ function UnlockPage() {
   const [loading, setLoading] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
   const [remember, setRemember] = useState(true);
+  const settings = settingsQuery.data?.settings ?? DEFAULT_UNLOCK_SETTINGS;
   const rows = assetsQuery.data?.rows ?? [];
   const registrarCount = new Set(rows.map((row) => row.registrar)).size;
   const cloudflareCount = rows.filter((row) => row.nsStatus === "cloudflare").length;
@@ -46,6 +55,12 @@ function UnlockPage() {
     { value: cloudflareCount, label: "Zones" },
     { value: registrarCount, label: "注册商" },
   ];
+
+  useEffect(() => {
+    document.title = `登录 · ${settings.siteName}`;
+    setMeta("description", settings.seoDescription || settings.siteDescription);
+    setFavicon(settings.faviconUrl);
+  }, [settings]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -77,12 +92,14 @@ function UnlockPage() {
           <div className="relative">
             <div className="mb-6 flex items-center gap-3">
               <div className="grid size-12 place-items-center rounded-xl bg-primary/12 text-primary ring-1 ring-inset ring-primary/25">
-                <DeckMark className="size-6" />
+                <BrandIcon logoUrl={settings.logoUrl} className="size-6" />
               </div>
               <div>
-                <h1 className="font-display text-2xl font-bold tracking-tight">DS Hunter</h1>
+                <h1 className="font-display text-2xl font-bold tracking-tight">
+                  {settings.siteName}
+                </h1>
                 <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-                  Domain Command Deck
+                  {settings.shortDescription}
                 </p>
               </div>
             </div>
@@ -92,10 +109,10 @@ function UnlockPage() {
                 私有资产控制台
               </div>
               <p className="mt-6 text-3xl font-bold leading-tight tracking-tight">
-                管理域名、注册商与 Cloudflare 状态，从这里进入。
+                {settings.heroDescription || settings.siteDescription}
               </p>
               <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                登录后可拉取注册商域名、合并筛选、批量绑定 Zone，并维护公开资产台账。
+                登录后可维护公开展示内容、拉取注册商域名、合并筛选并批量绑定 Zone。
               </p>
             </div>
           </div>
@@ -116,12 +133,12 @@ function UnlockPage() {
 
           <div className="mb-6 flex flex-col items-center gap-3 text-center md:hidden">
             <div className="grid size-12 place-items-center rounded-2xl bg-primary/12 text-primary shadow-lg shadow-primary/25 ring-1 ring-inset ring-primary/25">
-              <DeckMark className="size-6" />
+              <BrandIcon logoUrl={settings.logoUrl} className="size-6" />
             </div>
             <div>
-              <h1 className="font-display text-xl font-bold tracking-tight">DS Hunter</h1>
+              <h1 className="font-display text-xl font-bold tracking-tight">{settings.siteName}</h1>
               <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                Command Deck · 登录
+                {settings.shortDescription} · 登录
               </p>
             </div>
           </div>
@@ -209,5 +226,68 @@ function UnlockPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+const DEFAULT_UNLOCK_SETTINGS: SiteSettings = {
+  siteName: "DS Hunter",
+  siteDescription: "专业的域名展示、筛选与管理工具",
+  shortDescription: "域名展示与筛选工具",
+  heroDescription: "集中展示、筛选和管理你的域名项目。",
+  logoUrl: "",
+  faviconUrl: "",
+  contactEmail: "",
+  contactText: "",
+  contactWechat: "",
+  contactTelegram: "",
+  contactQQ: "",
+  icpNumber: "",
+  policeRecordNumber: "",
+  footerText: "",
+  showIcp: false,
+  showPoliceRecord: false,
+  showFooterText: true,
+  seoTitle: "DS Hunter",
+  seoDescription: "DS Hunter - 域名展示、筛选与管理工具",
+  copyrightOwner: "DS Hunter",
+  copyrightYear: String(new Date().getFullYear()),
+  announcement: "",
+  socialLinks: [],
+};
+
+function setMeta(name: string, content: string) {
+  if (!content) return;
+  let meta = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = name;
+    document.head.appendChild(meta);
+  }
+  meta.content = content;
+}
+
+function setFavicon(href: string) {
+  if (!href) return;
+  let link = document.querySelector<HTMLLinkElement>('link[rel="icon"][data-site-settings="true"]');
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "icon";
+    link.dataset.siteSettings = "true";
+    document.head.appendChild(link);
+  }
+  link.href = href;
+}
+
+function BrandIcon({ logoUrl, className }: { logoUrl: string; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [logoUrl]);
+  if (!logoUrl || failed) return <DeckMark className={className} />;
+  return (
+    <img
+      src={logoUrl}
+      alt=""
+      className={["rounded-sm object-contain", className].filter(Boolean).join(" ")}
+      onError={() => setFailed(true)}
+    />
   );
 }
