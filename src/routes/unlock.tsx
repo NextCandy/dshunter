@@ -39,7 +39,8 @@ function UnlockPage() {
     try {
       const r = await unlock({ data: { email, password: pw } });
       if (r.ok) {
-        await router.navigate({ to: "/dashboard" });
+        await router.invalidate();
+        await router.navigate({ to: "/dashboard", replace: true });
       } else {
         setErr("账号或密码错误");
       }

@@ -113,7 +113,8 @@ function AppLayout() {
 
   const onLock = async () => {
     await lock();
-    router.navigate({ to: "/unlock" });
+    await router.invalidate();
+    router.navigate({ to: "/unlock", replace: true });
   };
   const nav = (
     <SidebarNav
