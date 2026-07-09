@@ -292,6 +292,37 @@ npm run build
   - 登录会话内对 `/api/admin/site-settings` 提交同值保存返回 200，保存后公开配置内容保持一致。
   - 390x844 移动首页无横向溢出，浏览器控制台无 error/warning。
 
+## 2026-07-09 登录页资产读数动态化阶段
+
+- 已将 `/unlock` 登录页左侧资产读数从硬编码快照改为读取 `listPublicDomainAssets`：
+  - 域名总数来自公开资产行数。
+  - `Zones` 来自 `nsStatus === "cloudflare"` 的数量。
+  - 注册商数来自当前资产里的注册商去重数量。
+  - 数据加载中显示 `—`，避免展示过期数字。
+- 本地验证：
+  - `bun run lint` 通过，0 error / 0 warning。
+  - `bun run typecheck` 通过。
+  - `bun run build` 通过，构建输出无 `inputValidator()` 或 `vite-tsconfig-paths` 弃用提示。
+  - `git diff --check` 通过。
+  - 敏感信息扫描无命中。
+- GitHub 状态：
+  - 本地提交：`c1c7e0f fix: 登录页资产读数改为动态数据`。
+  - 远端 `main` 提交：`7e59f37beaabdaafae684d2f329213b7a01f3ab1`。
+  - GitHub Actions docker workflow `28986102148` 通过。
+- NAS 部署：
+  - 已部署到 NAS 实际项目 `/volume1/docker/dshunter`，仅重建并重启 `dshunter` 服务，未修改反代/frpc/frps 配置。
+  - 本次 NAS 备份：
+    - `/volume1/docker/_backups/dshunter/dshunter-20260709-085432.tar.gz`
+    - `/volume1/docker/_backups/dshunter/dshunter-data-20260709-085432.tar.gz`
+    - `/volume1/docker/_backups/dshunter/docker-compose-20260709-085432.yml`
+    - `/volume1/docker/_backups/dshunter/env-20260709-085432.bak`
+  - 部署后容器 `dshunter` 为 `healthy`，镜像 ID 为 `sha256:77854769d8269a9d7b615425abd49afba8960a60e83bcca0149d9a510152996a`。
+- 线上验证：
+  - `https://dshunter.com` 返回 200，`/unlock` 返回 200，`/api/site-settings` 返回 200，未登录调用 `/api/admin/site-settings` 返回 401。
+  - 浏览器打开 `/unlock` 可看到 live 资产读数：`493 域名`、`42 Zones`、`3 注册商`。
+  - 登录后直接进入 `/dashboard`，页面标题为“指挥台 · dshunter”，并渲染“运营概览”内容。
+  - 390x844 移动登录页无横向溢出，浏览器控制台无 error/warning。
+
 ## 接手机器操作
 
 ```powershell
