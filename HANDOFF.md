@@ -27,6 +27,7 @@
   - 无「迁移合并」日志 → 存量数据本无重复记录，属正常。
 - **本地仓库**：已快进对齐 origin/main（17b264c），工作区干净。对齐前的旧工作区改动存在 stash（`WIP on main: b953f39`，内容与 17b264c 相同，可 `git stash drop` 清理）。
 - **文档**：README「公开首页」「手动域名」「维护状态」已同步新功能描述并推送。
+- **冗余清理（2026-07-09 下午）**：删除过时文档 `CHANGELOG-redesign.md`（内容已进 git 历史）与 `DEPLOY_VERCEL.md`（旧项目名 DomainOps、"无数据库"说法与现架构矛盾）；按 import 传递闭包分析删除 26 个未被引用的 `src/components/ui/*` 组件（51→25 个，`badge/button/toggle-variants` 因被保留组件引用而保留），tsc 0 错误验证通过；删除已完全合并进 main 的远端分支 `codex/dshunter-redesign-readme`。保留 `AGENTS.md`（构建速查）与 `PROGRESS.md`（README 引用的历史档案）。
 
 ## 3. 当前卡点
 
