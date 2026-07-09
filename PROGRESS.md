@@ -263,6 +263,35 @@ npm run build
   - 代码阶段远端提交 `dd168dd56118cec2cc6f284dae48c94848b4fd68` 已通过 GitHub Actions docker workflow `28983990316`。
   - README 接手说明远端提交 `72f03c2c27b3b38e07522338b46bde691aec6bd1` 已通过 GitHub Actions docker workflow `28984247296`。
 
+## 2026-07-09 登录态路由刷新阶段
+
+- 已优化后台登录/退出后的路由刷新：
+  - 登录成功后先 `router.invalidate()`，再 `replace` 跳转到 `/dashboard`，确保 `_app` 路由守卫基于最新 session cookie 重新计算。
+  - 退出登录后同样刷新路由守卫，再 `replace` 回 `/unlock`。
+- 本地验证：
+  - `bun run lint` 通过，0 error / 0 warning。
+  - `bun run typecheck` 通过。
+  - `bun run build` 通过，构建输出无 `inputValidator()` 或 `vite-tsconfig-paths` 弃用提示。
+  - `git diff --check` 通过。
+  - 敏感信息扫描无命中。
+- GitHub 状态：
+  - 本地提交：`33ed6b8 fix: 刷新登录态路由守卫`。
+  - 远端 `main` 提交：`855a37245a20577f3384213e6cb91d9e8906623c`。
+  - GitHub Actions docker workflow `28985368169` 通过。
+- NAS 部署：
+  - 已部署到 NAS 实际项目 `/volume1/docker/dshunter`，仅重建并重启 `dshunter` 服务，未修改反代/frpc/frps 配置。
+  - 本次 NAS 备份：
+    - `/volume1/docker/_backups/dshunter/dshunter-20260709-083535.tar.gz`
+    - `/volume1/docker/_backups/dshunter/dshunter-data-20260709-083535.tar.gz`
+    - `/volume1/docker/_backups/dshunter/docker-compose-20260709-083535.yml`
+    - `/volume1/docker/_backups/dshunter/env-20260709-083535.bak`
+  - 部署后容器 `dshunter` 为 `healthy`，镜像 ID 为 `sha256:8fc8cb77d1ae913c1c55be201962358fec8c3d39f7fa381883d60a407d8a06b7`。
+- 线上验证：
+  - `https://dshunter.com` 返回 200，`/api/site-settings` 返回 200，未登录调用 `/api/admin/site-settings` 返回 401。
+  - 浏览器登录后直接进入 `/dashboard`，页面标题为“指挥台 · dshunter”，并渲染“运营概览”内容。
+  - 登录会话内对 `/api/admin/site-settings` 提交同值保存返回 200，保存后公开配置内容保持一致。
+  - 390x844 移动首页无横向溢出，浏览器控制台无 error/warning。
+
 ## 接手机器操作
 
 ```powershell
