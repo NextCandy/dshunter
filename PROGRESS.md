@@ -249,11 +249,19 @@ npm run build
   - `git diff --check` 通过。
   - 敏感信息扫描无命中。
 - NAS 部署状态：
-  - 本阶段尚未部署到 NAS；当前 NAS SSH 密码/交互认证仍失败。
-  - 线上旧版本健康性保持：上一轮已确认 `https://dshunter.com` 200、未登录 admin 保存接口返回 401。
-  - NAS 凭据恢复后，应先备份 `/volume1/docker/dshunter` 与 `data`，再增量部署本阶段改动。
+  - 2026-07-09 已部署到 NAS 实际项目 `/volume1/docker/dshunter`，仅重建并重启 `dshunter` 服务，未修改反代/frpc/frps 配置。
+  - 本次 NAS 备份：
+    - `/volume1/docker/_backups/dshunter/dshunter-20260709-081129.tar.gz`
+    - `/volume1/docker/_backups/dshunter/dshunter-data-20260709-081129.tar.gz`
+    - `/volume1/docker/_backups/dshunter/docker-compose-20260709-081129.yml`
+    - `/volume1/docker/_backups/dshunter/env-20260709-081129.bak`
+  - 部署后容器 `dshunter` 为 `healthy`，镜像 ID 为 `sha256:893fea6bd3c370ab558a70ca3391c7a46cd1f494d2bc4117412075a734ad4bba`。
+  - NAS 本机验证：`http://127.0.0.1:8834/` 返回 200，`/api/site-settings` 返回 200，未登录调用 `/api/admin/site-settings` 返回 401。
+  - 线上验证：`https://dshunter.com` 返回 200，`/api/site-settings` 返回 200，未登录调用 `/api/admin/site-settings` 返回 401。
+  - 浏览器 smoke：桌面首页、390x844 移动首页、登录页均返回 200，无控制台 error/warning，移动首页无横向溢出。
 - GitHub 状态：
-  - 待提交本阶段代码、同步 GitHub `main`、等待 GitHub Actions 通过。
+  - 代码阶段远端提交 `dd168dd56118cec2cc6f284dae48c94848b4fd68` 已通过 GitHub Actions docker workflow `28983990316`。
+  - README 接手说明远端提交 `72f03c2c27b3b38e07522338b46bde691aec6bd1` 已通过 GitHub Actions docker workflow `28984247296`。
 
 ## 接手机器操作
 
