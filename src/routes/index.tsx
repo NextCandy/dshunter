@@ -49,8 +49,9 @@ export const Route = createFileRoute("/")({
   component: PublicHome,
 });
 
-type LengthFilter = "all" | "1" | "2" | "3" | "4" | "5" | "6+";
+type LengthFilter = "all" | "1-2" | "3" | "4" | "5" | "6" | "7+";
 type FeaturedFilter = "all" | "featured" | "normal";
+type KindFilter = "all" | "numeric" | "alpha" | "alnum" | "hyphen";
 
 function PublicHome() {
   const listFn = useServerFn(listPublicDomainAssets);
@@ -69,7 +70,7 @@ function PublicHome() {
   const [suffix, setSuffix] = useState("all");
   const [lengthFilter, setLengthFilter] = useState<LengthFilter>("all");
   const [featuredFilter, setFeaturedFilter] = useState<FeaturedFilter>("all");
-  const [category, setCategory] = useState("all");
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -80,7 +81,7 @@ function PublicHome() {
   // 筛选条件变化时分页回到第一页（筛选条件本身保持不变）
   useEffect(() => {
     setPage(1);
-  }, [debounced, suffix, lengthFilter, featuredFilter, category]);
+  }, [debounced, suffix, lengthFilter, featuredFilter, kindFilter]);
 
   useEffect(() => {
     document.title = titleForSettings(settings);
@@ -125,12 +126,6 @@ function PublicHome() {
     return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   }, [deduped]);
 
-  const categoryOptions = useMemo(() => {
-    const set = new Set<string>();
-    for (const row of deduped) if (row.category) set.add(row.category);
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }, [deduped]);
-
   // ---------- 去重后：筛选 → 排序 → 分页 ----------
   const filtered = useMemo(() => {
     return deduped.filter((row) => {
@@ -138,28 +133,26 @@ function PublicHome() {
       if (suffix !== "all" && domainSuffix(row.domain) !== suffix) return false;
       if (lengthFilter !== "all") {
         const len = domainBody(row.domain).length;
-        if (lengthFilter === "6+" ? len < 6 : len !== Number(lengthFilter)) return false;
+        if (lengthFilter === "1-2" && len > 2) return false;
+        if (lengthFilter === "7+" && len < 7) return false;
+        if (lengthFilter !== "1-2" && lengthFilter !== "7+" && len !== Number(lengthFilter)) {
+          return false;
+        }
       }
       if (featuredFilter === "featured" && !row.featured) return false;
       if (featuredFilter === "normal" && row.featured) return false;
-      if (category !== "all" && row.category !== category) return false;
+      if (kindFilter !== "all" && domainKind(row.domain) !== kindFilter) return false;
       return true;
     });
-  }, [deduped, debounced, suffix, lengthFilter, featuredFilter, category]);
+  }, [deduped, debounced, suffix, lengthFilter, featuredFilter, kindFilter]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
       // 精品永远在前
       if (a.featured !== b.featured) return a.featured ? -1 : 1;
-      // 组内：有排序权重的在前，权重小的在前
-      const aw = a.sortOrder;
-      const bw = b.sortOrder;
-      if (aw !== undefined || bw !== undefined) {
-        if (aw === undefined) return 1;
-        if (bw === undefined) return -1;
-        if (aw !== bw) return aw - bw;
-      }
-      // 最后按字母序，保证稳定可预测
+      // 组内：主体长度从短到长，再按字母序，保证展示站默认排序直观稳定
+      const lenDiff = domainBody(a.domain).length - domainBody(b.domain).length;
+      if (lenDiff !== 0) return lenDiff;
       return a.domain.localeCompare(b.domain);
     });
   }, [filtered]);
@@ -173,7 +166,7 @@ function PublicHome() {
     if (!el) return;
     const compute = () => {
       const cols = gridColsForViewport(window.innerWidth);
-      const cardH = 44; // h-11
+      const cardH = 56; // h-14
       const gap = 8; // gap-2
       const rows = Math.max(2, Math.floor((el.clientHeight + gap) / (cardH + gap)));
       setPageSize(Math.max(10, cols * rows));
@@ -262,12 +255,12 @@ function PublicHome() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">全部位数</SelectItem>
-              <SelectItem value="1">1 位</SelectItem>
-              <SelectItem value="2">2 位</SelectItem>
+              <SelectItem value="1-2">1-2 位</SelectItem>
               <SelectItem value="3">3 位</SelectItem>
               <SelectItem value="4">4 位</SelectItem>
               <SelectItem value="5">5 位</SelectItem>
-              <SelectItem value="6+">6 位及以上</SelectItem>
+              <SelectItem value="6">6 位</SelectItem>
+              <SelectItem value="7+">7 位及以上</SelectItem>
             </SelectContent>
           </Select>
           <Select
@@ -283,50 +276,47 @@ function PublicHome() {
               <SelectItem value="normal">非精品</SelectItem>
             </SelectContent>
           </Select>
-          {categoryOptions.length > 0 && (
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="h-9 w-[7.5rem]" aria-label="按其他分类筛选">
-                <SelectValue placeholder="其他" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全部分类</SelectItem>
-                {categoryOptions.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          <Select value={kindFilter} onValueChange={(v) => setKindFilter(v as KindFilter)}>
+            <SelectTrigger className="h-9 w-[8.5rem]" aria-label="按类型筛选">
+              <SelectValue placeholder="类型" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部类型</SelectItem>
+              <SelectItem value="numeric">纯数字</SelectItem>
+              <SelectItem value="alpha">纯字母</SelectItem>
+              <SelectItem value="alnum">字母数字</SelectItem>
+              <SelectItem value="hyphen">包含短横线</SelectItem>
+            </SelectContent>
+          </Select>
           <span className="ml-auto shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
             {sorted.length} / {deduped.length}
           </span>
         </div>
 
         {/* 域名网格 */}
-        <div ref={gridAreaRef} className="min-h-0 flex-1 overflow-y-auto">
+        <div ref={gridAreaRef} className="min-h-0 flex-1 overflow-hidden">
           {pageRows.length === 0 ? (
             <div className="grid h-full min-h-32 place-items-center text-sm text-muted-foreground">
               {loading ? "正在载入域名…" : "暂无匹配的域名"}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
               {pageRows.map((row) => (
                 <div
                   key={row.domain}
                   title={row.domain}
                   className={cn(
-                    "flex h-11 min-w-0 items-center gap-1.5 rounded-lg border border-border/60 bg-card px-3 transition-colors hover:border-primary/40",
-                    row.featured && "border-primary/35 bg-primary/6",
+                    "flex h-14 min-w-0 items-center justify-center gap-1.5 rounded-lg border border-border/70 bg-card/90 px-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-surface-hover/45",
+                    row.featured &&
+                      "border-warning/65 bg-warning/10 shadow-[0_0_24px_rgba(245,158,11,0.14)]",
                   )}
                 >
                   {row.featured && (
-                    <Star
-                      className="size-3.5 shrink-0 fill-warning text-warning"
-                      aria-label="精品"
-                    />
+                    <Star className="size-4 shrink-0 fill-warning text-warning" aria-label="精品" />
                   )}
-                  <span className="truncate font-mono text-sm font-medium">{row.domain}</span>
+                  <span className="min-w-0 truncate font-mono text-[15px] font-semibold tracking-normal">
+                    {row.domain}
+                  </span>
                 </div>
               ))}
             </div>
@@ -394,9 +384,19 @@ function PublicHome() {
 function gridColsForViewport(width: number) {
   if (width >= 1536) return 6;
   if (width >= 1280) return 5;
-  if (width >= 768) return 4;
-  if (width >= 640) return 3;
-  return 2;
+  if (width >= 1024) return 4;
+  if (width >= 768) return 3;
+  if (width >= 640) return 2;
+  return 1;
+}
+
+function domainKind(domain: string): KindFilter {
+  const body = domainBody(normalizeDomainLoose(domain));
+  if (body.includes("-")) return "hyphen";
+  if (/^\d+$/.test(body)) return "numeric";
+  if (/^[a-z]+$/.test(body)) return "alpha";
+  if (/^[a-z0-9]+$/.test(body)) return "alnum";
+  return "alnum";
 }
 
 // 联系方式：后台已配置 contactLinks 时只用它；
